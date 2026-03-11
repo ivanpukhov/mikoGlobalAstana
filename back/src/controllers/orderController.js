@@ -4,6 +4,7 @@ const {sequelize} = require('../models');
 const {Op, fn, col, literal} = require('sequelize');
 const moment = require("moment");
 const sendNotification = require('../utils/notificationService');
+const { getRenderedTemplate } = require('../utils/templateService');
 
 
 const deleteOrder = async (req, res) => {
@@ -130,24 +131,21 @@ const createOrder = async (req, res) => {
             ? `🎁 Оплачен подарочным сертификатом: *${usedGiftCertificate.code}* (на сумму ${usedGiftCertificate.amount} KZT)`
             : '';
 
-        const customerMessage = `
-📦 *Ваш заказ успешно создан!*
-
-*Информация о заказе:*
-- Имя клиента: *${customerName}*
-- Номер телефона: *${customerPhone}*
-- Адрес доставки: *${customerAddress}*
-- Способ доставки: *${deliveryMethod}*
-- Способ оплаты: *${paymentMethod}*
-- Сумма заказа: *${finalTotalAmount} KZT*
-${promoText}
-${certificateText}
-
-*Товары:*
-${itemsDetailsText}
-
-✨ Спасибо за ваш заказ! Мы свяжемся с вами для подтверждения. Хорошего дня! 😊
-    `;
+        const customerMessage = await getRenderedTemplate(
+            'order.createdForCustomer',
+            {
+                customerName,
+                customerPhone,
+                customerAddress,
+                deliveryMethod,
+                paymentMethod,
+                finalTotalAmount,
+                promoText,
+                certificateText,
+                itemsDetailsText
+            },
+            '📦 Ваш заказ успешно создан!\n\nИмя клиента: {customerName}\nНомер телефона: {customerPhone}\nАдрес доставки: {customerAddress}\nСпособ доставки: {deliveryMethod}\nСпособ оплаты: {paymentMethod}\nСумма заказа: {finalTotalAmount} KZT\n{promoText}\n{certificateText}\n\nТовары:\n{itemsDetailsText}\n\nСпасибо за ваш заказ!'
+        );
         await sendNotification(customerPhone, customerMessage);
 
         // Уведомление администраторам
@@ -161,27 +159,23 @@ ${itemsDetailsText}
         });
 
         const orderLink = `https://miko-astana.kz/admin/orders/${order.id}`;
-        const cityMessage = `
-🔔 *Новый заказ в вашем городе${city.name ? `: ${city.name}` : ''}!*
-
-*Детали заказа:*
-- Имя клиента: *${customerName}*
-- Номер телефона: *${customerPhone}*
-- Адрес доставки: *${customerAddress}*
-- Способ доставки: *${deliveryMethod}*
-- Способ оплаты: *${paymentMethod}*
-- Сумма заказа: *${finalTotalAmount} KZT*
-${promoText}
-${certificateText}
-
-*Товары:*
-${itemsDetailsText}
-
-🖥️ Для просмотра подробностей перейдите по ссылке: 
-${orderLink}
-
-✨ Спасибо за вашу работу! Удачного дня! 😊
-    `;
+        const cityMessage = await getRenderedTemplate(
+            'order.createdForAdmin',
+            {
+                cityName: city.name || '',
+                customerName,
+                customerPhone,
+                customerAddress,
+                deliveryMethod,
+                paymentMethod,
+                finalTotalAmount,
+                promoText,
+                certificateText,
+                itemsDetailsText,
+                orderLink
+            },
+            '🔔 Новый заказ в вашем городе {cityName}!\n\nИмя клиента: {customerName}\nНомер телефона: {customerPhone}\nАдрес доставки: {customerAddress}\nСпособ доставки: {deliveryMethod}\nСпособ оплаты: {paymentMethod}\nСумма заказа: {finalTotalAmount} KZT\n{promoText}\n{certificateText}\n\nТовары:\n{itemsDetailsText}\n\nСсылка: {orderLink}'
+        );
 
         for (const user of usersToNotify) {
             await sendNotification(user.phoneNumber, cityMessage);
@@ -235,17 +229,15 @@ const updateOrderStatus = async (req, res) => {
         order.status = status;
         await order.save();
 
-        const clientMessage = `
-📦 *Обновление по вашему заказу!*
-
-Здравствуйте, *${order.customerName}* 👋
-
-Статус вашего заказа №${order.id} был обновлён:
-📌 Новый статус: *${status.toUpperCase()}*
-
-Спасибо, что выбрали нас! 😊  
-С любовью, команда *Miko-Astana*
-        `;
+        const clientMessage = await getRenderedTemplate(
+            'order.statusUpdatedForCustomer',
+            {
+                customerName: order.customerName,
+                orderId: order.id,
+                status: status.toUpperCase(),
+            },
+            '📦 Обновление по вашему заказу!\n\nЗдравствуйте, {customerName}\nСтатус вашего заказа №{orderId}: {status}'
+        );
 
         await sendNotification(order.customerPhone, clientMessage);
 
@@ -258,17 +250,18 @@ const updateOrderStatus = async (req, res) => {
             }
         });
 
-        const adminMessage = `
-🔔 *Изменение статуса заказа!*
-
-Статус заказа №${order.id} был изменён:
-👤 Клиент: *${order.customerName}*
-📞 Телефон: *${order.customerPhone}*
-🏙️ Город: *${order.city?.name || 'Неизвестно'}*
-📌 Новый статус: *${status.toUpperCase()}*
-
-🖥️ Ссылка на заказ: https://miko-astana.kz/admin/orders/${order.id}
-        `;
+        const adminMessage = await getRenderedTemplate(
+            'order.statusUpdatedForAdmin',
+            {
+                orderId: order.id,
+                cityName: order.city?.name || 'Неизвестно',
+                customerName: order.customerName,
+                customerPhone: order.customerPhone,
+                status: status.toUpperCase(),
+                orderLink: `https://miko-astana.kz/admin/orders/${order.id}`,
+            },
+            '🔔 Изменение статуса заказа!\nСтатус заказа №{orderId}: {status}\nКлиент: {customerName}\nТелефон: {customerPhone}\nГород: {cityName}\nСсылка: {orderLink}'
+        );
 
         for (const user of usersToNotify) {
             await sendNotification(user.phoneNumber, adminMessage);

@@ -31,6 +31,8 @@ import PurchasedCertificatesPage from "./pages/PurchasedCertificatesPage";
 import api from "./api/api";
 import { Spin } from 'antd';
 import SkinTypeTest from "./pages/Test/Test";
+import NotificationsPage from "./pages/NotificationsPage";
+import FloatingFeedback from "./components/FloatingFeedback";
 
 function App() {
     const [selectedCity, setSelectedCity] = useState(null);
@@ -132,12 +134,14 @@ function App() {
                         <Route path="users/create" element={<UserCreatePage />} />
                         <Route path="gift-certificates" element={<GiftCertificatesPage />} />
                         <Route path="purchased-certificates" element={<PurchasedCertificatesPage />} />
+                        <Route path="notifications" element={<NotificationsPage />} />
                     </Route>
                     <Route path="/admin/login" element={<LoginPage />} />
                 </Routes>
             )}
 
             {!isAdminRoute && <BarMobile />}
+            {!isAdminRoute && <FloatingFeedback />}
         </div>
     );
 }

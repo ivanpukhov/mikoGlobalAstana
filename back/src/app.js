@@ -10,6 +10,7 @@ const { sequelize } = require('./models');
 const { indexProducts } = require("./utils/meilisearch");
 const userRoutes = require('./routes/userRoutes');
 const giftCertificateRoutes = require('./routes/giftCertificateRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const purchasedCertificateRoutes = require('./routes/purchasedCertificateRoutes');
 app.use(express.json({ limit: '50mb' }));
@@ -26,6 +27,7 @@ app.use('/api/cities', cityRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/notifications', notificationRoutes);
 // Синхронизация базы данных и индексация
 (async () => {
     try {

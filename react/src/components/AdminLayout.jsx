@@ -11,6 +11,7 @@ import {
     HomeOutlined,
     GiftOutlined,
     LogoutOutlined,
+    BellOutlined,
 } from "@ant-design/icons";
 import api from "../api/api";
 import logo from "../images/logo-admin.svg";
@@ -76,6 +77,7 @@ const AdminLayout = () => {
         { key: "6", icon: <TagsOutlined />, label: <Link to="/admin/promocodes">Промокоды</Link> },
         { key: "8", icon: <GiftOutlined />, label: <Link to="/admin/gift-certificates">Подарочные сертификаты</Link> },
         { key: "9", icon: <GiftOutlined />, label: <Link to="/admin/purchased-certificates">Купленные сертификаты</Link> },
+        { key: "10", icon: <BellOutlined />, label: <Link to="/admin/notifications">Уведомления</Link> },
         { key: "7", icon: <LogoutOutlined />, label: <Button type="link" onClick={handleLogout}>Выход</Button> },
     ];
 

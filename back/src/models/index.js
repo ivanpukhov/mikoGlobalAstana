@@ -11,6 +11,8 @@ const ProductAttribute = require('./ProductAttribute');
 const PromoCode = require('./PromoCode');
 const GiftCertificate = require('./GiftCertificate');
 const PurchasedCertificate = require('./PurchasedCertificate');
+const NotificationSetting = require('./NotificationSetting');
+const NotificationTemplate = require('./NotificationTemplate');
 
 // Ассоциации
 Category.hasMany(Subcategory, { foreignKey: 'categoryId', as: 'subcategories' });
@@ -47,5 +49,7 @@ module.exports = {
     User,
     ProductAttribute,
     GiftCertificate,
-    PurchasedCertificate
+    PurchasedCertificate,
+    NotificationSetting,
+    NotificationTemplate
 };

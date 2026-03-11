@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { User, City } = require('../models');
 const { Op } = require('sequelize');
 const sendNotification = require('../utils/notificationService');
+const { getRenderedTemplate } = require('../utils/templateService');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
 class UserController {
@@ -40,10 +41,11 @@ class UserController {
 
             // Отправляем уведомление о регистрации
             const cityName = city ? city.name : 'Все города';
-            const message = `Добро пожаловать, ${name}! Вы успешно зарегистрированы.
-Ваш номер телефона: ${phoneNumber}
-Ваш пароль: ${password}
-Ваш город: ${cityName}`;
+            const message = await getRenderedTemplate(
+                'user.register',
+                { name, phoneNumber, password, cityName },
+                'Добро пожаловать, {name}! Вы успешно зарегистрированы.\nВаш номер телефона: {phoneNumber}\nВаш пароль: {password}\nВаш город: {cityName}'
+            );
             await sendNotification(phoneNumber, message);
 
             res.status(201).json({
@@ -82,9 +84,11 @@ class UserController {
             );
 
             // Отправляем уведомление о входе
-            const message = `Здравствуйте, ${user.name}!
-Вы успешно вошли в систему.
-Ваш номер телефона: ${phoneNumber}`;
+            const message = await getRenderedTemplate(
+                'user.login',
+                { name: user.name, phoneNumber },
+                'Здравствуйте, {name}!\nВы успешно вошли в систему.\nВаш номер телефона: {phoneNumber}'
+            );
             await sendNotification(phoneNumber, message);
 
             res.status(200).json({
@@ -139,11 +143,11 @@ class UserController {
 
             // Отправляем уведомление о создании аккаунта
             const cityName = city ? city.name : 'Все города';
-            const message = `Здравствуйте, ${name}!
-Для вас был создан аккаунт.
-Ваш номер телефона: ${phoneNumber}
-Ваш временный пароль: ${generatedPassword}
-Ваш город: ${cityName}`;
+            const message = await getRenderedTemplate(
+                'user.createdByAdmin',
+                { name, phoneNumber, password: generatedPassword, cityName },
+                'Здравствуйте, {name}!\nДля вас был создан аккаунт.\nВаш номер телефона: {phoneNumber}\nВаш временный пароль: {password}\nВаш город: {cityName}'
+            );
             await sendNotification(phoneNumber, message);
 
             res.status(201).json({

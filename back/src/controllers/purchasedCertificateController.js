@@ -2,21 +2,26 @@ const { PurchasedCertificate, GiftCertificate, User } = require('../models');
 const { Op } = require('sequelize');
 const crypto = require('crypto');
 const sendNotification = require('../utils/notificationService');
+const { getRenderedTemplate } = require('../utils/templateService');
 
 async function notifyAdminsAboutCertificate(action, certificate) {
     const admins = await User.findAll({ where: { cityId: null } });
 
-    const text = `
-🔔 ${action}
-ID: ${certificate.id}
-Код: ${certificate.code}
-Статус: ${certificate.status}
-Сумма: ${certificate.amount} KZT
-Отправитель: ${certificate.senderPhone}
-Получатель: ${certificate.recipientPhone}
-Сообщение: ${certificate.message || '-'}
-Тип сертификата: ${certificate.giftCertificate ? certificate.giftCertificate.name : '-'}
-`;
+    const text = await getRenderedTemplate(
+        'certificate.general',
+        {
+            action,
+            id: certificate.id,
+            code: certificate.code,
+            status: certificate.status,
+            amount: certificate.amount,
+            senderPhone: certificate.senderPhone,
+            recipientPhone: certificate.recipientPhone,
+            message: certificate.message || '-',
+            certificateName: certificate.giftCertificate ? certificate.giftCertificate.name : '-',
+        },
+        '🔔 {action}\nID: {id}\nКод: {code}\nСтатус: {status}\nСумма: {amount} KZT\nОтправитель: {senderPhone}\nПолучатель: {recipientPhone}\nСообщение: {message}\nТип сертификата: {certificateName}'
+    );
 
     for (const admin of admins) {
         await sendNotification(admin.phoneNumber, text, certificate.giftCertificate?.imageUrl);
@@ -66,15 +71,17 @@ const confirmPayment = async (req, res) => {
         await purchasedCertificate.save();
 
         const url = `https://miko-astana.kz/gift/${encodeURIComponent(purchasedCertificate.code)}`;
-        const message = `
-🎁 Вам подарили сертификат на сумму ${purchasedCertificate.amount} KZT!
-Отправитель: ${purchasedCertificate.senderPhone}
-Сообщение: ${purchasedCertificate.message}
-Код сертификата: *${purchasedCertificate.code}*
-
-Для активации сертификата перейдите по ссылке:  
-${url}
-`;
+        const message = await getRenderedTemplate(
+            'certificate.paymentConfirmed',
+            {
+                amount: purchasedCertificate.amount,
+                senderPhone: purchasedCertificate.senderPhone,
+                message: purchasedCertificate.message,
+                code: purchasedCertificate.code,
+                url,
+            },
+            '🎁 Вам подарили сертификат на сумму {amount} KZT!\nОтправитель: {senderPhone}\nСообщение: {message}\nКод сертификата: {code}\n\nДля активации перейдите по ссылке: {url}'
+        );
 
         await sendNotification(purchasedCertificate.recipientPhone, message, purchasedCertificate.giftCertificate.imageUrl);
 
