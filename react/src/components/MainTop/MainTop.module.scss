@@ -1,0 +1,136 @@
+.mainTop {
+  display: flex;
+  gap: 20px;
+
+  a {
+    text-decoration: none;
+  }
+
+  &__catalog {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* По умолчанию: 3 колонки */
+    grid-template-rows: auto repeat(2, 1fr); /* 1 строка для заголовка, 2 строки по 3 элемента */
+    gap: 20px;
+    padding-bottom: 5px;
+
+    &--title {
+      grid-column: span 3;
+      width: 100%;
+      color: var(--logo-black, #060606);
+      font-size: 32px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: normal;
+      margin-bottom: -10px;
+      letter-spacing: -0.3px;
+    }
+
+    &--item {
+      width: 100%;
+      height: 100%;
+      border-radius: 12.426px;
+      background: #30B67E;
+      position: relative;
+      padding: 13px;
+      color: #FFF;
+      font-size: 22px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: normal;
+      letter-spacing: -0.3px;
+
+      @media screen and (max-width: 1268px) {
+        font-size: 18px;
+
+      }
+
+      .icon {
+        width: 50px;
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+      }
+    }
+
+    &--img {
+      width: 100px;
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      @media screen and (max-width: 1396px) {
+        width: 85px;
+        bottom: 0;
+      }
+      @media screen and (max-width: 1268px) {
+        bottom: 5px;
+        width: 70px;
+      }
+
+      @media screen and (max-width: 749px) {
+        bottom: 5px;
+        width: 90px;
+      }
+
+
+      img {
+        width: 100%;
+
+      }
+    }
+
+    @media (max-width: 1200px) {
+      gap: 10px;
+      @media (max-width: 1070px) {
+        .mainTop__catalog--item {
+          height: 133px;
+        }
+      }
+      @media (max-width: 742px) {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        height: fit-content;
+
+        .mainTop__catalog--item {
+          height: 133px;
+          max-width: calc(33% - 5px) !important;
+
+          @media (max-width: 528px) {
+            max-width: calc(50% - 5px) !important;
+
+
+          }
+        }
+
+
+      }
+
+      &--title {
+        margin-bottom: 0;
+      }
+
+
+    }
+  }
+
+  @media (max-width: 1070px) {
+    flex-direction: column;
+  }
+
+
+  &__banner {
+    width: 100%;
+
+    img {
+      width: 100%;
+      border-radius: 25px;
+
+      @media screen and (max-width: 749px) {
+        border-radius: 15px;
+      }
+    }
+  }
+
+
+}

@@ -1,0 +1,156 @@
+.header {
+  width: 100%;
+  border-radius: 0 0 10px 10px;
+  background: #0CE3CB;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  position: relative;
+
+  &__block {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    gap: 24px;
+
+  }
+
+  &__catalog {
+    display: flex;
+    gap: 8px;
+    border-radius: 10px;
+    background: var(--logo-white, rgba(255, 255, 255, 0.23));
+    padding: 10px 20px;
+    align-items: center;
+
+    color: #FFF;
+    text-align: center;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    letter-spacing: -0.3px;
+
+
+  }
+
+  &__search {
+    border-radius: 10px;
+    background: var(--logo-white, #FEFEFE);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+
+    input {
+      border: none;
+      outline: none;
+      width: 100%;
+      color: #333;
+      font-size: 18px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: normal;
+      letter-spacing: -0.3px;
+
+      &::placeholder {
+        color: rgba(11, 227, 202, 0.8);
+      }
+    }
+
+    img:nth-child(2){
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 800px) {
+
+  span {
+    display: none;
+  }
+
+  .header {
+    height: 76px;
+
+    &__logo {
+      display: flex;
+      align-items: center;
+      width: 153px;
+
+      img {
+        max-width: 100%;
+      }
+    }
+
+    &__block {
+      gap: 10px;
+    }
+
+    &__search {
+      padding: 10px 13px;
+      background: rgba(255, 255, 255, 0.3);
+
+      img {
+        display: none;
+      }
+
+      img:last-of-type {
+        height: 15px;
+        display: block;
+      }
+
+      input {
+        font-size: 15px;
+        background: transparent;
+
+        &::placeholder {
+          color: white;
+        }
+      }
+    }
+
+    &__catalog {
+      display: none;
+
+      &:last-of-type {
+        display: flex;
+        padding: 10px;
+      }
+    }
+  }
+
+}
+
+.suggestions {
+  position: absolute;
+  background: white;
+  list-style: none;
+  padding: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  top: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  border-radius: 0 0 10px 10px;
+  left: 20px;
+  right: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+
+  li {
+    padding: 10px;
+    cursor: pointer;
+
+    &:hover {
+      background: #f0f0f0;
+    }
+
+    a {
+      text-decoration: none;
+      color: black;
+    }
+  }
+}

@@ -1,0 +1,25 @@
+.category-card {
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    height: 180px; /* Базовая высота */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #a29bfe, #81ecec);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Адаптация для телефонов */
+@media (max-width: 576px) {
+    .category-card {
+        height: 120px; /* Уменьшенная высота для телефонов */
+    }
+}

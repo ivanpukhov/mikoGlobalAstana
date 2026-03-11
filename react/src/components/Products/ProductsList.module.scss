@@ -1,0 +1,86 @@
+.products {
+  width: 100%;
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  &__title {
+    color: #060606;
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+    letter-spacing: -0.3px;
+  }
+
+  &__list {
+    width: 100%;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(6, 1fr);
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(5, 1fr);
+    }
+
+    @media (max-width: 850px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    @media (max-width: 750px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 550px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+}
+
+.sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  &__item {
+    color: rgb(6, 6, 6);
+    background: #e0e0e0;
+
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    justify-content: center;
+    padding: 10px 24px;
+    width: fit-content;
+    transition: .5s;
+    white-space: nowrap;
+
+    &.active {
+      background: #0CE3CB;
+      color: white;
+    }
+
+  }
+
+  @media (max-width: 1200px) {
+    overflow-y: scroll;
+    flex-wrap: nowrap;
+    &::after {
+      content: url('../../images/products/back.svg');
+      position: absolute;
+      right: 15px;
+      width: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 40px;
+      background: #effffd;
+      transform: rotate(180deg);
+      border-radius: 0 10px 10px 0;
+    }
+
+  }
+}

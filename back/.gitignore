@@ -1,0 +1,40 @@
+# Исключаем зависимости Node.js
+node_modules/
+
+# Логи
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Сборки и кеши
+dist/
+build/
+.cache/
+.tmp/
+
+# Базы данных и дампы
+database/
+*.ms
+dumps/
+
+# Загрузки
+uploads/
+
+# Файлы конфигурации окружения
+.env
+.env.local
+.env.*.local
+
+# Файлы и папки, специфичные для IDE/редакторов
+.idea/
+.vscode/
+*.swp
+
+# Сервисы
+serve.log
+meilisearch
+
+# macOS файлы
+.DS_Store

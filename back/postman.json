@@ -1,0 +1,193 @@
+{
+  "info": {
+    "name": "Product and City API",
+    "description": "API для управления товарами, городами, ценами, скидками и доступностью.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Cities",
+      "item": [
+        {
+          "name": "Get All Cities",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/cities",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["cities"]
+            }
+          }
+        },
+        {
+          "name": "Create City",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Нур-Султан\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/cities",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["cities"]
+            }
+          }
+        },
+        {
+          "name": "Update Product Price in City",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 10000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/cities/:cityId/products/:productId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["cities", ":cityId", "products", ":productId"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Get Product By ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/products/:productId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["products", ":productId"]
+            }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Товар 1", "type": "text" },
+                { "key": "description", "value": "Описание товара", "type": "text" },
+                { "key": "categoryName", "value": "Категория 1", "type": "text" },
+                { "key": "subcategoryName", "value": "Подкатегория 1", "type": "text" },
+                { "key": "defaultPrice", "value": "500", "type": "text" },
+                {
+                  "key": "cityPrices",
+                  "value": "[{\"cityId\":1,\"price\":600,\"discount\":10},{\"cityId\":2,\"price\":700}]",
+                  "type": "text"
+                },
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:3000/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Get Products By City",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:3000/cities/:cityId/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["cities", ":cityId", "products"]
+            }
+          }
+        },
+        {
+          "name": "Update Product Availability",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availability\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/cities/:cityId/products/:productId/availability",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["cities", ":cityId", "products", ":productId", "availability"]
+            }
+          }
+        },
+        {
+          "name": "Update Product Discount",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"discount\": 15\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/cities/:cityId/products/:productId/discount",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["cities", ":cityId", "products", ":productId", "discount"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
