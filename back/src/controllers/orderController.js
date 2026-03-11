@@ -6,6 +6,24 @@ const moment = require("moment");
 const sendNotification = require('../utils/notificationService');
 const { getRenderedTemplate } = require('../utils/templateService');
 
+const FEEDBACK_DELAY_MS = Number(process.env.ORDER_FEEDBACK_DELAY_MS || 10 * 60 * 1000);
+
+const scheduleFeedbackRequest = ({ orderId, customerName, customerPhone }) => {
+    setTimeout(async () => {
+        try {
+            const feedbackMessage = await getRenderedTemplate(
+                'order.feedbackRequest',
+                { orderId, customerName },
+                'Здравствуйте, {customerName}!\nНадеемся, заказ №{orderId} вам понравился.\nПожалуйста, оставьте короткую обратную связь.'
+            );
+
+            await sendNotification(customerPhone, feedbackMessage);
+        } catch (error) {
+            console.error(`Ошибка отправки запроса обратной связи по заказу #${orderId}:`, error.message || error);
+        }
+    }, FEEDBACK_DELAY_MS);
+};
+
 
 const deleteOrder = async (req, res) => {
     const { id } = req.params;
@@ -180,6 +198,12 @@ const createOrder = async (req, res) => {
         for (const user of usersToNotify) {
             await sendNotification(user.phoneNumber, cityMessage);
         }
+
+        scheduleFeedbackRequest({
+            orderId: order.id,
+            customerName,
+            customerPhone
+        });
 
         // Получение заказа с деталями
         const createdOrder = await Order.findByPk(order.id, {

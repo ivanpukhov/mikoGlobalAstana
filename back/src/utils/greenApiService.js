@@ -44,11 +44,16 @@ const getQr = async () => {
     const settings = await getSettings();
     const url = buildEndpoint(settings, 'qr');
     const { data } = await axios.get(url);
+    const base64 = String(data?.qrCode || data?.message || '').trim();
+    const qrImageUrl = base64
+        ? `data:image/png;base64,${base64.replace(/\s+/g, '')}`
+        : null;
 
     return {
         type: data?.type,
         message: data?.message,
         qrCode: data?.message || data?.qrCode || null,
+        qrImageUrl,
         raw: data,
     };
 };

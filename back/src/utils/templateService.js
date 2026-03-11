@@ -37,6 +37,11 @@ const DEFAULT_TEMPLATES = [
         text: '🔔 Статус заказа №{orderId} изменён на {status}.\\nКлиент: {customerName}\\nТелефон: {customerPhone}',
     },
     {
+        key: 'order.feedbackRequest',
+        name: 'Запрос обратной связи по заказу',
+        text: 'Здравствуйте, {customerName}!\\nНадеемся, заказ №{orderId} вам понравился.\\nПожалуйста, оставьте короткую обратную связь: что было хорошо и что улучшить.',
+    },
+    {
         key: 'certificate.general',
         name: 'События по сертификатам (админ)',
         text: '🔔 {action}\\nID: {id}\\nКод: {code}\\nСтатус: {status}\\nСумма: {amount} KZT\\nОтправитель: {senderPhone}\\nПолучатель: {recipientPhone}\\nСообщение: {message}\\nТип сертификата: {certificateName}',

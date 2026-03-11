@@ -32,6 +32,7 @@ const NotificationsPage = () => {
     const [qrText, setQrText] = useState('');
     const [templates, setTemplates] = useState([]);
     const [savingTemplateKey, setSavingTemplateKey] = useState('');
+    const [qrRenderMode, setQrRenderMode] = useState('text');
     const pollerRef = useRef(null);
 
     const stopPolling = useCallback(() => {
@@ -132,14 +133,46 @@ const NotificationsPage = () => {
                 return;
             }
 
-            const qrValue = data?.qrCode || data?.message || '';
+            if (data?.type === 'qrCode') {
+                const qrMessage = String(data?.message || data?.qrCode || '').trim();
+                if (!qrMessage) {
+                    message.warning('QR пока недоступен. Проверьте состояние инстанса.');
+                    return;
+                }
 
-            if (!qrValue) {
+                setQrRenderMode('image');
+                setQrText(`data:image/png;base64,${qrMessage.replace(/\s+/g, '')}`);
+                setIsAuthorized(false);
+                stopPolling();
+                pollerRef.current = setInterval(() => {
+                    checkState();
+                }, 5000);
+                return;
+            }
+
+            const qrValueRaw = String(data?.qrCode || data?.message || '').trim();
+
+            if (!qrValueRaw) {
                 message.warning('QR пока недоступен. Проверьте состояние инстанса.');
                 return;
             }
 
-            setQrText(qrValue);
+            const normalized = qrValueRaw.replace(/\s+/g, '');
+            const isDataImage = /^data:image\/[a-zA-Z+.-]+;base64,/.test(normalized);
+            const isLongBase64 = normalized.length > 1200 && /^[A-Za-z0-9+/=]+$/.test(normalized);
+            const isTooLongForQr = qrValueRaw.length > 1200;
+
+            if (isDataImage) {
+                setQrRenderMode('image');
+                setQrText(normalized);
+            } else if (isLongBase64 || isTooLongForQr) {
+                setQrRenderMode('image');
+                setQrText(`data:image/png;base64,${normalized}`);
+            } else {
+                setQrRenderMode('text');
+                setQrText(qrValueRaw);
+            }
+
             setIsAuthorized(false);
 
             stopPolling();
@@ -229,7 +262,15 @@ const NotificationsPage = () => {
 
                                 {!isAuthorized && qrText && (
                                     <Card title="QR для WhatsApp" style={{ width: '100%', textAlign: 'center' }}>
-                                        <QRCodeSVG value={qrText} size={240} includeMargin />
+                                        {qrRenderMode === 'image' ? (
+                                            <img
+                                                src={qrText}
+                                                alt="QR code"
+                                                style={{ maxWidth: '100%', width: 260, height: 260, objectFit: 'contain' }}
+                                            />
+                                        ) : (
+                                            <QRCodeSVG value={qrText} size={240} includeMargin />
+                                        )}
                                         <Divider />
                                         <Text type="secondary">Статус проверяется каждые 5 секунд</Text>
                                     </Card>
