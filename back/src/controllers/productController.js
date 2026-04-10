@@ -27,6 +27,13 @@ const LATIN_LOOKALIKE_CYRILLIC_MAP = {
     х: 'x',
 };
 
+const KNOWN_ENTITY_ALIASES = {
+    'ma:nyo': 'manyo',
+    'коллаген': 'collagen',
+    'снек': 'снеки',
+    'снэки': 'снеки',
+};
+
 const normalizeEntityName = (value = '') => value
     .normalize('NFKC')
     .replace(/\s+/g, ' ')
@@ -46,6 +53,11 @@ const getEntityLookupKey = (value = '') => normalizeLatinLookalikes(
     normalizeEntityName(value).replace(/([./:])\s+/g, '$1')
 ).toLocaleLowerCase('ru-RU');
 
+const getLooseEntityLookupKey = (value = '') => {
+    const compactKey = getEntityLookupKey(value).replace(/[ ./:()-]/g, '');
+    return KNOWN_ENTITY_ALIASES[compactKey] || compactKey;
+};
+
 const findOrCreateCategory = async (rawName, options = {}) => {
     const normalizedName = normalizeEntityName(rawName);
     const { transaction } = options;
@@ -64,9 +76,11 @@ const findOrCreateCategory = async (rawName, options = {}) => {
     }
 
     const lookupKey = getEntityLookupKey(normalizedName);
+    const looseLookupKey = getLooseEntityLookupKey(normalizedName);
     const categories = await Category.findAll({ transaction });
     const matchedCategory = categories.find((category) => (
         getEntityLookupKey(category.name) === lookupKey
+        || getLooseEntityLookupKey(category.name) === looseLookupKey
     ));
 
     if (matchedCategory) {
@@ -101,9 +115,11 @@ const findOrCreateSubcategory = async (categoryId, rawName, options = {}) => {
     }
 
     const lookupKey = getEntityLookupKey(normalizedName);
+    const looseLookupKey = getLooseEntityLookupKey(normalizedName);
     const subcategories = await Subcategory.findAll({ where: { categoryId }, transaction });
     const matchedSubcategory = subcategories.find((subcategory) => (
         getEntityLookupKey(subcategory.name) === lookupKey
+        || getLooseEntityLookupKey(subcategory.name) === looseLookupKey
     ));
 
     if (matchedSubcategory) {
