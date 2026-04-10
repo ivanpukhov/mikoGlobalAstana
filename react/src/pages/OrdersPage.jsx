@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import moment from "moment";
 import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
+import { formatCurrency } from "../utils/formatters";
 
 const { Option } = Select;
 
@@ -112,7 +113,7 @@ const OrdersPage = () => {
                     <div><strong>{record.customerName || "Не указано"}</strong></div>
                     <div>{record.customerPhone}</div>
                     <div>{record.city?.name}</div>
-                    <div>{record.totalAmount} ₸</div>
+                    <div>{formatCurrency(record.totalAmount)}</div>
                     <div>{moment(record.createdAt).format("DD.MM.YYYY")}</div>
                     <div>{getStatusLabel(record.status)}</div>
                 </div>
@@ -140,7 +141,8 @@ const OrdersPage = () => {
         {
             title: "Сумма (₸)",
             dataIndex: "totalAmount",
-            key: "totalAmount"
+            key: "totalAmount",
+            render: (amount) => formatCurrency(amount),
         },
         {
             title: "Дата",

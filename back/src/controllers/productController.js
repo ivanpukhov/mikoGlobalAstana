@@ -3,6 +3,123 @@ const {indexProducts} = require('../utils/meilisearch');
 const {Category, Subcategory, Product, City, ProductPrice} = require('../models');
 const client = require('../config/meilisearch'); // Подключение к Meilisearch
 
+const LATIN_LOOKALIKE_CYRILLIC_MAP = {
+    А: 'A',
+    а: 'a',
+    В: 'B',
+    Е: 'E',
+    е: 'e',
+    К: 'K',
+    к: 'k',
+    М: 'M',
+    м: 'm',
+    Н: 'H',
+    О: 'O',
+    о: 'o',
+    Р: 'P',
+    р: 'p',
+    С: 'C',
+    с: 'c',
+    Т: 'T',
+    У: 'Y',
+    у: 'y',
+    Х: 'X',
+    х: 'x',
+};
+
+const normalizeEntityName = (value = '') => value
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s+([./:])/g, '$1')
+    .trim();
+
+const normalizeLatinLookalikes = (value) => {
+    if (!/^[A-Za-z0-9 .,'&+/:()-АаВЕеКкМмНОоРрСсТУуХх]+$/.test(value)) {
+        return value;
+    }
+
+    return value.replace(/[АаВЕеКкМмНОоРрСсТУуХх]/g, (character) => LATIN_LOOKALIKE_CYRILLIC_MAP[character] || character);
+};
+
+const getEntityLookupKey = (value = '') => normalizeLatinLookalikes(
+    normalizeEntityName(value).replace(/([./:])\s+/g, '$1')
+).toLocaleLowerCase('ru-RU');
+
+const findOrCreateCategory = async (rawName, options = {}) => {
+    const normalizedName = normalizeEntityName(rawName);
+    const { transaction } = options;
+
+    if (!normalizedName) {
+        throw new Error('Название категории не может быть пустым.');
+    }
+
+    const exactMatch = await Category.findOne({
+        where: { name: normalizedName },
+        transaction,
+    });
+
+    if (exactMatch) {
+        return exactMatch;
+    }
+
+    const lookupKey = getEntityLookupKey(normalizedName);
+    const categories = await Category.findAll({ transaction });
+    const matchedCategory = categories.find((category) => (
+        getEntityLookupKey(category.name) === lookupKey
+    ));
+
+    if (matchedCategory) {
+        const cleanedExistingName = normalizeEntityName(matchedCategory.name);
+
+        if (cleanedExistingName !== matchedCategory.name) {
+            matchedCategory.name = cleanedExistingName;
+            await matchedCategory.save({ transaction });
+        }
+
+        return matchedCategory;
+    }
+
+    return Category.create({ name: normalizedName }, { transaction });
+};
+
+const findOrCreateSubcategory = async (categoryId, rawName, options = {}) => {
+    const normalizedName = normalizeEntityName(rawName);
+    const { transaction } = options;
+
+    if (!normalizedName) {
+        throw new Error('Название подкатегории не может быть пустым.');
+    }
+
+    const exactMatch = await Subcategory.findOne({
+        where: { name: normalizedName, categoryId },
+        transaction,
+    });
+
+    if (exactMatch) {
+        return exactMatch;
+    }
+
+    const lookupKey = getEntityLookupKey(normalizedName);
+    const subcategories = await Subcategory.findAll({ where: { categoryId }, transaction });
+    const matchedSubcategory = subcategories.find((subcategory) => (
+        getEntityLookupKey(subcategory.name) === lookupKey
+    ));
+
+    if (matchedSubcategory) {
+        const cleanedExistingName = normalizeEntityName(matchedSubcategory.name);
+
+        if (cleanedExistingName !== matchedSubcategory.name) {
+            matchedSubcategory.name = cleanedExistingName;
+            await matchedSubcategory.save({ transaction });
+        }
+
+        return matchedSubcategory;
+    }
+
+    return Subcategory.create({ name: normalizedName, categoryId }, { transaction });
+};
+
 // Получение всех товаров
 const getAllProducts = async (req, res) => {
     try {
@@ -60,17 +177,9 @@ const createProducts = async (req, res) => {
             const parsedCityPrices = Array.isArray(cityPrices) ? cityPrices : [];
             const parsedAttributes = Array.isArray(attributes) ? attributes : [];
 
-            let category = await Category.findOne({ where: { name: categoryName } });
-            if (!category) {
-                category = await Category.create({ name: categoryName });
-            }
+            const category = await findOrCreateCategory(categoryName);
 
-            let subcategory = await Subcategory.findOne({
-                where: { name: subcategoryName, categoryId: category.id },
-            });
-            if (!subcategory) {
-                subcategory = await Subcategory.create({ name: subcategoryName, categoryId: category.id });
-            }
+            const subcategory = await findOrCreateSubcategory(category.id, subcategoryName);
 
             const imagePath = req.file ? `/uploads/${req.file.filename}` : image || null;
 
@@ -469,15 +578,9 @@ const createProductsJson = async (req, res) => {
             const parsedCityPrices = Array.isArray(cityPrices) ? cityPrices : [];
             const parsedAttributes = Array.isArray(attributes) ? attributes : [];
 
-            let category = await Category.findOne({ where: { name: categoryName } });
-            if (!category) {
-                category = await Category.create({ name: categoryName });
-            }
+            const category = await findOrCreateCategory(categoryName);
 
-            let subcategory = await Subcategory.findOne({ where: { name: subcategoryName, categoryId: category.id } });
-            if (!subcategory) {
-                subcategory = await Subcategory.create({ name: subcategoryName, categoryId: category.id });
-            }
+            const subcategory = await findOrCreateSubcategory(category.id, subcategoryName);
 
             const imagePath = req.file ? `/uploads/${req.file.filename}` : image || null;
 
@@ -539,6 +642,9 @@ const createProductsJson = async (req, res) => {
 const updateProduct = async (req, res) => {
     const { id } = req.params;
 
+    const transaction = await sequelize.transaction();
+    let isCommitted = false;
+
     try {
         const productsData = req.body.products;
         const image = req.file;
@@ -549,27 +655,102 @@ const updateProduct = async (req, res) => {
 
         const parsedProducts = JSON.parse(productsData);
         const productData = parsedProducts[0];
+        const parsedCityPrices = Array.isArray(productData.cityPrices) ? productData.cityPrices : [];
+        const parsedAttributes = Array.isArray(productData.attributes) ? productData.attributes : [];
 
-        const product = await Product.findByPk(id);
+        const product = await Product.findByPk(id, {
+            include: [
+                { model: ProductPrice, as: 'prices' },
+                { model: ProductAttribute, as: 'attributes' },
+            ],
+            transaction,
+        });
         if (!product) {
+            await transaction.rollback();
             return res.status(404).json({ error: `Товар с ID ${id} не найден.` });
         }
 
+        const category = await findOrCreateCategory(productData.categoryName, { transaction });
+        const subcategory = await findOrCreateSubcategory(category.id, productData.subcategoryName, { transaction });
+
         product.name = productData.name;
         product.description = productData.description || product.description;
+        product.categoryId = category.id;
+        product.subcategoryId = subcategory.id;
         product.image = image ? `/uploads/${image.filename}` : product.image;
 
-        await product.save();
+        await product.save({ transaction });
 
-        if (productData.attributes && Array.isArray(productData.attributes)) {
-            await ProductAttribute.destroy({ where: { productId: id } });
-            for (const { name, value } of productData.attributes) {
-                await ProductAttribute.create({ productId: id, name, value });
+        if (Array.isArray(productData.attributes)) {
+            await ProductAttribute.destroy({ where: { productId: id }, transaction });
+            for (const { name, value } of parsedAttributes) {
+                await ProductAttribute.create({ productId: id, name, value }, { transaction });
             }
         }
 
-        res.json({ success: true, product });
+        const existingPricesByCityId = new Map(
+            product.prices.map((price) => [Number(price.cityId), price])
+        );
+
+        for (const cityPrice of parsedCityPrices) {
+            const cityId = Number(cityPrice.cityId);
+            const nextPrice = Number(cityPrice.price);
+            const nextDiscount = Number(cityPrice.discount ?? 0);
+
+            if (!cityId || !Number.isFinite(nextPrice)) {
+                continue;
+            }
+
+            const existingPrice = existingPricesByCityId.get(cityId);
+
+            if (existingPrice) {
+                existingPrice.price = nextPrice;
+                existingPrice.discount = Number.isFinite(nextDiscount) ? nextDiscount : 0;
+                existingPrice.availability = cityPrice.availability ?? existingPrice.availability;
+                await existingPrice.save({ transaction });
+                continue;
+            }
+
+            await ProductPrice.create({
+                productId: id,
+                cityId,
+                price: nextPrice,
+                discount: Number.isFinite(nextDiscount) ? nextDiscount : 0,
+                availability: cityPrice.availability ?? true,
+            }, { transaction });
+        }
+
+        const refreshedProduct = await Product.findByPk(id, {
+            include: [
+                'category',
+                'subcategory',
+                'prices',
+                { model: ProductAttribute, as: 'attributes' },
+            ],
+            transaction,
+        });
+
+        await transaction.commit();
+        isCommitted = true;
+
+        const defaultCityPrice = refreshedProduct.prices[0];
+        const index = client.index('products');
+        await index.addDocuments([{
+            id: refreshedProduct.id,
+            name: refreshedProduct.name,
+            description: refreshedProduct.description,
+            category: refreshedProduct.category?.name,
+            subcategory: refreshedProduct.subcategory?.name,
+            price: defaultCityPrice?.price || 0,
+            discount: defaultCityPrice?.discount || 0,
+            attributes: refreshedProduct.attributes.map((attr) => ({ name: attr.name, value: attr.value })),
+        }]);
+
+        res.json({ success: true, product: refreshedProduct });
     } catch (error) {
+        if (!isCommitted) {
+            await transaction.rollback();
+        }
         res.status(500).json({ error: error.message });
     }
 };

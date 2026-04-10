@@ -3,6 +3,7 @@ import { Table, Button, Space, Typography, Input, Select, Spin, Modal, InputNumb
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/api";
 import { useMediaQuery } from "react-responsive";
+import { formatCurrency } from "../utils/formatters";
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -147,7 +148,7 @@ const ProductListPage = () => {
             title: "Цена",
             dataIndex: "defaultPrice",
             key: "defaultPrice",
-            render: (price) => `${price.toLocaleString()} ₸`,
+            render: (price) => formatCurrency(price),
         },
         {
             title: "Действия",

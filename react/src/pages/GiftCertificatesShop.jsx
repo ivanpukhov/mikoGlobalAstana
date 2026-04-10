@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Row, Col, Button, Modal, Form, Input, message } from "antd";
+import { Card, Row, Col, Button, Modal, Form, Input, InputNumber, message } from "antd";
 import api from "../api/api";
 
 const GiftCertificatesShop = () => {
@@ -83,7 +83,7 @@ const GiftCertificatesShop = () => {
                         <Input placeholder="+77001234567" />
                     </Form.Item>
                     <Form.Item name="amount" label="Сумма" rules={[{ required: true, message: "Введите сумму" }]}>
-                        <Input type="number" min={1000} max={100000} />
+                        <InputNumber min={1000} max={100000} precision={0} step={1} style={{ width: "100%" }} />
                     </Form.Item>
                     <Form.Item name="message" label="Сообщение" rules={[{ required: true, message: "Введите сообщение" }]}>
                         <Input.TextArea rows={3} placeholder="Поздравляю тебя с праздником!" />

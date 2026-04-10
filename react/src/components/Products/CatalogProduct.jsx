@@ -4,6 +4,7 @@ import styles from "./ProductItem.module.scss";
 import { Link, useLocation } from "react-router-dom";
 import favoriteIcon from "../../images/favorite.svg";
 import placeholder from "../../images/products/i.jpg";
+import { formatCurrency } from "../../utils/formatters";
 
 export const CatalogProduct = ({ product, onQuantityChange }) => {
     const { id, name, image, prices } = product;
@@ -112,10 +113,10 @@ export const CatalogProduct = ({ product, onQuantityChange }) => {
             </Link>
 
             <div className={styles["products__item--price"]}>
-                <span className={styles["price"]}>{discountedPrice.toFixed(2)} ₸</span>
+                <span className={styles["price"]}>{formatCurrency(discountedPrice)}</span>
                 {hasDiscount && (
                     <span className={styles["subprice"]}>
-                        {originalPrice.toFixed(2)} ₸
+                        {formatCurrency(originalPrice)}
                     </span>
                 )}
             </div>

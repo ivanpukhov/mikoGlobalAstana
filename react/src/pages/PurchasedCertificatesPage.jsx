@@ -1,6 +1,7 @@
 import { Table, Button, Tag, message, Modal } from "antd";
 import api from "../api/api";
 import {useEffect, useState} from "react";
+import { formatCurrency } from "../utils/formatters";
 
 const PurchasedCertificatesPage = () => {
     const [purchasedCertificates, setPurchasedCertificates] = useState([]);
@@ -77,7 +78,7 @@ const PurchasedCertificatesPage = () => {
         { title: "ID", dataIndex: "id", key: "id" },
         { title: "Отправитель", dataIndex: "senderPhone", key: "senderPhone" },
         { title: "Получатель", dataIndex: "recipientPhone", key: "recipientPhone" },
-        { title: "Сумма", dataIndex: "amount", key: "amount", render: (amount) => `${amount} KZT` },
+        { title: "Сумма", dataIndex: "amount", key: "amount", render: (amount) => formatCurrency(amount, "KZT") },
         { title: "Сообщение", dataIndex: "message", key: "message" },
         { title: "Код", dataIndex: "code", key: "code" },
         {

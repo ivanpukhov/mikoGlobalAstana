@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, message } from "antd";
 import api from "../api/api";
 import moment from "moment";
+import { formatCurrency } from "../utils/formatters";
 
 const PromocodesPage = () => {
     const [promocodes, setPromocodes] = useState([]);
@@ -84,7 +85,7 @@ const PromocodesPage = () => {
                 columns={[
                     { title: "Название", dataIndex: "name" },
                     { title: "Скидка (%)", dataIndex: "discountPercentage" },
-                    { title: "Сумма скидки", dataIndex: "discountAmount" },
+                    { title: "Сумма скидки", dataIndex: "discountAmount", render: (amount) => amount ? formatCurrency(amount) : "—" },
                     { title: "Ограничение", dataIndex: "usageLimit" },
                     { title: "Использовано", dataIndex: "usageCount" },
                     { title: "Срок действия", dataIndex: "expirationDate", render: (text) => moment(text).format("YYYY-MM-DD") },
@@ -118,7 +119,7 @@ const PromocodesPage = () => {
                         <InputNumber min={0} max={100} style={{ width: "100%" }} />
                     </Form.Item>
                     <Form.Item name="discountAmount" label="Сумма скидки">
-                        <InputNumber min={0} style={{ width: "100%" }} />
+                        <InputNumber min={0} precision={0} step={1} style={{ width: "100%" }} />
                     </Form.Item>
                     <Form.Item name="usageLimit" label="Лимит использования">
                         <InputNumber min={1} style={{ width: "100%" }} />

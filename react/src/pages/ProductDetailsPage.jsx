@@ -1,8 +1,9 @@
 import React, {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {Button, Card, Image, Input, message, Modal, Spin, Table, Typography} from "antd";
+import {Button, Card, Image, InputNumber, message, Modal, Spin, Table, Typography} from "antd";
 import {ArrowLeftOutlined, LoadingOutlined} from "@ant-design/icons";
 import api from "../api/api";
+import { formatCurrency } from "../utils/formatters";
 
 const ProductDetailsPage = () => {
     const {id} = useParams();
@@ -142,6 +143,7 @@ const ProductDetailsPage = () => {
             title: "Цена (₸)",
             dataIndex: "price",
             key: "price",
+            render: (price) => formatCurrency(price),
         },
         {
             title: "Скидка (%)",
@@ -232,11 +234,14 @@ const ProductDetailsPage = () => {
                 okText="Сохранить"
                 cancelText="Отмена"
             >
-                <Input
-                    type="number"
+                <InputNumber
+                    min={0}
+                    precision={0}
+                    step={1}
                     value={newPrice}
-                    onChange={(e) => setNewPrice(e.target.value)}
+                    onChange={(value) => setNewPrice(value)}
                     placeholder="Введите новую цену"
+                    style={{ width: "100%" }}
                 />
             </Modal>
             <Modal

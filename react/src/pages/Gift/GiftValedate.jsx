@@ -6,6 +6,7 @@ import api from "../../api/api";
 import Confetti from "react-confetti";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
+import { formatCurrency } from "../../utils/formatters";
 
 export const GiftValidate = () => {
     const { id } = useParams();
@@ -68,7 +69,7 @@ export const GiftValidate = () => {
                             <Box component="img" src={certificate.giftCertificate.imageUrl} sx={{ maxWidth: 321, maxHeight: 189, width: '100%', margin: "0 auto", borderRadius: '10px', objectFit: "cover" }} />
                             <Typography variant="h4" fontWeight={700} color="primary" sx={{ mt: 2 }}>{certificate.giftCertificate.name}</Typography>
                             <Typography variant="h6" sx={{ mt: 2, color: "gray" }}>🎁 Вам подарили сертификат на сумму:</Typography>
-                            <Typography variant="h3" color="success.main" fontWeight={700} sx={{ mt: 1 }}>{certificate.amount} KZT</Typography>
+                            <Typography variant="h3" color="success.main" fontWeight={700} sx={{ mt: 1 }}>{formatCurrency(certificate.amount, "KZT")}</Typography>
                             <Typography variant="body1" sx={{ mt: 2 }}>Отправитель: <strong>{certificate.senderPhone}</strong></Typography>
                             <Box mt={4}>
                                 <motion.div whileHover={{ scale: 1.1 }}>

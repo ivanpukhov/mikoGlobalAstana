@@ -4,6 +4,7 @@ import api from "../api/api";
 import {useNavigate, useParams} from "react-router-dom";
 
 import logo from "../images/logo-admin.svg";
+import { formatCurrency } from "../utils/formatters";
 
 const {Title} = Typography;
 
@@ -93,6 +94,7 @@ const OrderDetailsPage = () => {
             title: "Цена",
             dataIndex: "productPrice",
             key: "productPrice",
+            render: (price) => formatCurrency(price),
         },
         {
             title: "Скидка",
@@ -103,11 +105,12 @@ const OrderDetailsPage = () => {
             title: "Цена за единицу",
             dataIndex: "productTotal",
             key: "productTotal",
+            render: (price) => formatCurrency(price),
         },
         {
             title: "Итого",
             key: "totalPrice",
-            render: (text, record) => (record.productTotal * record.quantity).toFixed(2),
+            render: (text, record) => formatCurrency(record.productTotal * record.quantity),
         },
     ];
 
@@ -158,7 +161,7 @@ const OrderDetailsPage = () => {
                     <Descriptions.Item label="Адрес">{order.customerAddress}</Descriptions.Item>
                     <Descriptions.Item label="Метод оплаты">{order.paymentMethod}</Descriptions.Item>
                     <Descriptions.Item label="Метод доставки">{order.deliveryMethod}</Descriptions.Item>
-                    <Descriptions.Item label="Общая сумма">{order.totalAmount} ₸</Descriptions.Item>
+                    <Descriptions.Item label="Общая сумма">{formatCurrency(order.totalAmount)}</Descriptions.Item>
                     <Descriptions.Item label="Дата создания">
                         {new Date(order.createdAt).toLocaleString()}
                     </Descriptions.Item>
@@ -186,7 +189,7 @@ const OrderDetailsPage = () => {
                 />
                 <div style={{marginTop: "30px", textAlign: "right"}}>
                     <p>
-                        <b>Итоговая сумма:</b> {order.totalAmount} ₸
+                        <b>Итоговая сумма:</b> {formatCurrency(order.totalAmount)}
                     </p>
                 </div>
             </div>

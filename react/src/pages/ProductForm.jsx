@@ -180,7 +180,7 @@ const ProductForm = ({ initialValues = {}, productId = null }) => {
                     label="Цена по умолчанию"
                     rules={[{ required: true, message: "Введите цену" }]}
                 >
-                    <InputNumber min={0} style={{ width: "100%" }} />
+                    <InputNumber min={0} precision={0} step={1} style={{ width: "100%" }} />
                 </Form.Item>
 
                 <Form.Item name="defaultDiscount" label="Скидка по умолчанию (%)">
@@ -203,7 +203,7 @@ const ProductForm = ({ initialValues = {}, productId = null }) => {
                                             </Select>
                                         </Form.Item>
                                         <Form.Item name={[name, "price"]}>
-                                            <InputNumber min={0} placeholder="Цена" />
+                                            <InputNumber min={0} precision={0} step={1} placeholder="Цена" />
                                         </Form.Item>
                                         <Form.Item name={[name, "discount"]}>
                                             <InputNumber min={0} max={100} placeholder="Скидка (%)" />

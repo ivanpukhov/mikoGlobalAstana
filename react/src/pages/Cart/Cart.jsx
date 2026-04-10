@@ -10,6 +10,8 @@ import kaspi from "../../images/cart/kaspi.svg";
 import shop from "../../images/cart/shop.svg";
 import select from "../../images/cart/select.svg";
 import delivery from "../../images/cart/delivery.svg";
+import { formatCurrency } from "../../utils/formatters";
+import { EVERY_ORDER_GIFT, getNextOrderGiftTier, getOrderGiftTier } from "../../utils/orderGifts";
 
 export const Cart = () => {
     const [form, setForm] = useState({
@@ -107,7 +109,11 @@ export const Cart = () => {
         try {
             const response = await api.get(`/promocodes/${promoCode}`);
             setPromoData(response.data);
-            Swal.fire("Промокод активирован!", `Скидка: ${response.data.discountPercentage ? response.data.discountPercentage + "%" : response.data.discountAmount + "₸"}`, "success");
+            Swal.fire(
+                "Промокод активирован!",
+                `Скидка: ${response.data.discountPercentage ? response.data.discountPercentage + "%" : formatCurrency(response.data.discountAmount)}`,
+                "success"
+            );
         } catch (error) {
             console.error("Ошибка при проверке промокода:", error);
             setPromoData(null);
@@ -116,6 +122,19 @@ export const Cart = () => {
             setIsCheckingPromo(false);
         }
     };
+
+    const finalPrice = giftData
+        ? Math.max(0, totalPrice - giftData.amount)
+        : promoData
+            ? Math.max(
+                0,
+                promoData.discountPercentage
+                    ? totalPrice * (1 - promoData.discountPercentage / 100)
+                    : totalPrice - promoData.discountAmount
+            )
+            : totalPrice;
+    const currentGiftTier = getOrderGiftTier(totalPrice);
+    const nextGiftTier = getNextOrderGiftTier(totalPrice);
 
 
     const handleSubmit = async (e) => {
@@ -290,29 +309,21 @@ export const Cart = () => {
                         </div>
                         <div className="cart__total">
                             <div className="cart__total--item">
-                                Итоговая цена со скидкой:{" "}
-                                {giftData
-                                    ? Math.max(0, totalPrice - giftData.amount)
-                                    : promoData
-                                        ? (promoData.discountPercentage
-                                            ? totalPrice * (1 - promoData.discountPercentage / 100)
-                                            : totalPrice - promoData.discountAmount)
-                                        : totalPrice}{" "}
-                                ₸
+                                Итоговая цена со скидкой: {formatCurrency(finalPrice)}
                             </div>
                             {giftData && (
                                 <div className="cart__discount">
                                     {totalPrice > giftData.amount ? (
                                         <b>
-                                            <b style={{color: 'red'}}>{giftData.amount}₸</b> оплачено сертификатом.
+                                            <b style={{color: 'red'}}>{formatCurrency(giftData.amount)}</b> оплачено сертификатом.
                                             <br />
-                                            Осталось доплатить:  <b style={{color: 'red'}}>{totalPrice - giftData.amount}₸</b>
+                                            Осталось доплатить:  <b style={{color: 'red'}}>{formatCurrency(totalPrice - giftData.amount)}</b>
                                         </b>
                                     ) : (
                                         <b>
-                                            <b style={{color: 'red'}}>{totalPrice}₸</b> оплачено сертификатом.
+                                            <b style={{color: 'red'}}>{formatCurrency(totalPrice)}</b> оплачено сертификатом.
                                             <br />
-                                            Остаток на сертификате:  <b style={{color: 'red'}}>{giftData.amount - totalPrice}₸</b>
+                                            Остаток на сертификате:  <b style={{color: 'red'}}>{formatCurrency(giftData.amount - totalPrice)}</b>
                                         </b>
                                     )}
                                 </div>
@@ -321,9 +332,23 @@ export const Cart = () => {
                             {promoData && (
                                 <div className="cart__discount">
                                     Применен промокод.
-                                    Скидка: {promoData.discountPercentage ? promoData.discountPercentage + "%" : promoData.discountAmount + "₸"}
+                                    Скидка: {promoData.discountPercentage ? promoData.discountPercentage + "%" : formatCurrency(promoData.discountAmount)}
                                 </div>
                             )}
+
+                            <div className="cart__gift">
+                                <div className="cart__gift-title">Подарок к заказу</div>
+                                <div>При каждом заказе подарок: <b>{EVERY_ORDER_GIFT}</b></div>
+                                {currentGiftTier ? (
+                                    <div>
+                                        По вашей сумме заказа в подарок идёт: <b>{currentGiftTier.gift}</b>
+                                    </div>
+                                ) : nextGiftTier ? (
+                                    <div>
+                                        Добавьте ещё <b>{formatCurrency(nextGiftTier.min - totalPrice)}</b> и получите в подарок: <b>{nextGiftTier.gift}</b>
+                                    </div>
+                                ) : null}
+                            </div>
 
                             <div className="cart__total--sub">
                                 Цена доставки по тарифу Яндекс.

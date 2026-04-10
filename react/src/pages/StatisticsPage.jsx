@@ -3,6 +3,7 @@ import { Card, Row, Col, Typography, Select, Spin, Space } from "antd";
 import api from "../api/api";
 import moment from "moment";
 import "moment/locale/ru";
+import { formatCurrency } from "../utils/formatters";
 
 moment.locale("ru");
 
@@ -135,7 +136,7 @@ const StatisticsPage = () => {
                             }}
                         >
                             <Text style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-                                {formatNumber(statistics.totalAmount)} ₸
+                                {formatCurrency(statistics.totalAmount)}
                             </Text>
                         </Card>
                     </Col>
@@ -149,7 +150,7 @@ const StatisticsPage = () => {
                             }}
                         >
                             <Text style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-                                {formatNumber(statistics.averageOrderAmount)} ₸
+                                {formatCurrency(statistics.averageOrderAmount)}
                             </Text>
                         </Card>
                     </Col>
@@ -211,7 +212,7 @@ const StatisticsPage = () => {
                                     >
                                         <Text style={{ fontSize: "1.1rem" }}>Заказы: {item.orderCount}</Text>
                                         <br />
-                                        <Text style={{ fontSize: "1.1rem" }}>Выручка: {formatNumber(item.totalRevenue)} ₸</Text>
+                                        <Text style={{ fontSize: "1.1rem" }}>Выручка: {formatCurrency(item.totalRevenue)}</Text>
                                     </Card>
                                 </Col>
                             );

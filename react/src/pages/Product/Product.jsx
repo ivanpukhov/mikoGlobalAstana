@@ -8,6 +8,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../api/api";
 import { Modal, Button, QRCode } from 'antd';
+import { formatCurrency } from "../../utils/formatters";
 
 export const Product = () => {
     const [product, setProduct] = useState(null);
@@ -117,9 +118,9 @@ export const Product = () => {
                     <div className={styles['product__price']}>
                         <div className={styles['product__price--title']}>При покупке на сайте</div>
                         <div className={styles['product__price--block']}>
-                            <span>{priceWithoutDiscount} ₸</span>
+                            <span>{formatCurrency(priceWithoutDiscount)}</span>
                             <span>-{discount}%</span>
-                            <span>{discountedPrice} ₸</span>
+                            <span>{formatCurrency(discountedPrice)}</span>
                         </div>
                     </div>
                     <div className={styles['product__btns']}>

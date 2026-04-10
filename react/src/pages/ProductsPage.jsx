@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form, Input, InputNumber, Select, Upload, Image } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import api from "../api/api";
+import { formatCurrency } from "../utils/formatters";
 
 const ProductsPage = () => {
     const [products, setProducts] = useState([]);
@@ -138,7 +139,7 @@ const ProductsPage = () => {
         { title: "Описание", dataIndex: "description", key: "description" },
         { title: "Категория", dataIndex: "categoryName", key: "categoryName" },
         { title: "Подкатегория", dataIndex: "subcategoryName", key: "subcategoryName" },
-        { title: "Цена (по умолчанию)", dataIndex: "defaultPrice", key: "defaultPrice" },
+        { title: "Цена (по умолчанию)", dataIndex: "defaultPrice", key: "defaultPrice", render: (price) => formatCurrency(price) },
         { title: "Скидка (%)", dataIndex: "defaultDiscount", key: "defaultDiscount" },
         {
             title: "Действия",
@@ -234,7 +235,7 @@ const ProductsPage = () => {
                         label="Цена по умолчанию"
                         rules={[{ required: true, message: "Введите цену" }]}
                     >
-                        <InputNumber min={0} style={{ width: "100%" }} />
+                        <InputNumber min={0} precision={0} step={1} style={{ width: "100%" }} />
                     </Form.Item>
                     <Form.Item
                         name="defaultDiscount"
@@ -272,7 +273,7 @@ const ProductsPage = () => {
                                                 fieldKey={[field.fieldKey, "price"]}
                                                 rules={[{ required: true, message: "Введите цену" }]}
                                             >
-                                                <InputNumber min={0} placeholder="Цена" />
+                                                <InputNumber min={0} precision={0} step={1} placeholder="Цена" />
                                             </Form.Item>
                                             <Form.Item
                                                 {...field}
@@ -319,7 +320,7 @@ const ProductsPage = () => {
                         <ul>
                             {detailedProduct.prices.map((price) => (
                                 <li key={price.id}>
-                                    Город {price.cityId}: {price.price} тг, Скидка: {price.discount}%
+                                    Город {price.cityId}: {formatCurrency(price.price, "тг")}, Скидка: {price.discount}%
                                 </li>
                             ))}
                         </ul>

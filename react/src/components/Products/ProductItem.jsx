@@ -3,6 +3,7 @@ import styles from "./ProductItem.module.scss"; // Импорт CSS-модуля
 import products from "../../images/products/12.webp";
 import favorite from "../../images/favorite.svg";
 import {Link} from "react-router-dom";
+import { formatCurrency } from "../../utils/formatters";
 
 export const ProductItem = () => {
     const [cart, setCart] = useState(false);
@@ -31,8 +32,8 @@ export const ProductItem = () => {
                 Острый соус куриный Buldak Karbonara Hot Chicken Sauce, 200гр.
             </Link>
             <div className={styles["products__item--price"]}>
-                <span className={styles["price"]}>2470 ₸</span>
-                <span className={styles["subprice"]}>2600 ₸</span>
+                <span className={styles["price"]}>{formatCurrency(2470)}</span>
+                <span className={styles["subprice"]}>{formatCurrency(2600)}</span>
             </div>
             {cart ? (
                 <Link to={'/cart'} className={styles["products__item--btn"]}>
