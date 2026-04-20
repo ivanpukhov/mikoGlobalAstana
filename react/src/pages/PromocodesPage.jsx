@@ -3,6 +3,7 @@ import {
     ActionIcon,
     Badge,
     Button,
+    Card,
     Group,
     Loader,
     Modal,
@@ -126,7 +127,8 @@ const PromocodesPage = () => {
             {loading ? (
                 <Group justify="center" py="xl"><Loader color="miko" /></Group>
             ) : (
-                <Table striped highlightOnHover withTableBorder radius="md">
+                <>
+                <Table striped highlightOnHover withTableBorder radius="md" visibleFrom="sm">
                     <Table.Thead>
                         <Table.Tr>
                             <Table.Th>Название</Table.Th>
@@ -161,6 +163,29 @@ const PromocodesPage = () => {
                         ))}
                     </Table.Tbody>
                 </Table>
+                <Stack gap="sm" hiddenFrom="sm">
+                    {promocodes.map((p) => (
+                        <Card key={p.id} withBorder radius="xl" p="md">
+                            <Stack gap="xs">
+                                <Badge color="miko" variant="light" w="fit-content">{p.name}</Badge>
+                                <Text size="sm">Скидка: {p.discountPercentage ?? '—'}%</Text>
+                                <Text size="sm">Сумма скидки: {p.discountAmount ? formatCurrency(p.discountAmount) : '—'}</Text>
+                                <Text size="sm">Лимит: {p.usageLimit ?? '∞'}</Text>
+                                <Text size="sm">Использовано: {p.usageCount ?? 0}</Text>
+                                <Text size="sm">Срок: {p.expirationDate ? dayjs(p.expirationDate).format('YYYY-MM-DD') : '—'}</Text>
+                                <Group gap="xs">
+                                    <ActionIcon variant="light" color="miko" radius="md" onClick={() => openEdit(p)}>
+                                        <IconEdit size={16} />
+                                    </ActionIcon>
+                                    <ActionIcon variant="light" color="red" radius="md" onClick={() => handleDelete(p.name)}>
+                                        <IconTrash size={16} />
+                                    </ActionIcon>
+                                </Group>
+                            </Stack>
+                        </Card>
+                    ))}
+                </Stack>
+                </>
             )}
 
             <Modal

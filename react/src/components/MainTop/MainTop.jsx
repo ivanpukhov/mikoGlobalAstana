@@ -1,4 +1,5 @@
 import { Box, Grid, SimpleGrid } from '@mantine/core';
+import { Link } from 'react-router-dom';
 import { HeroCarousel } from '../HeroCarousel/HeroCarousel';
 import { CategoryTile } from '../CategoryTile/CategoryTile';
 import { SectionHeader } from '../SectionHeader/SectionHeader';
@@ -12,7 +13,16 @@ const SLIDES = [
 ];
 
 export const MainTop = ({ categories = [], loading = false }) => {
-    const topCategories = categories.slice(0, 12);
+    const topCategories = categories.slice(0, 7);
+    const tiles = [
+        ...topCategories,
+        {
+            id: 'all-categories',
+            name: 'Смотреть все',
+            to: '/categories',
+            isSeeAll: true,
+        },
+    ];
 
     return (
         <Box className={styles.mainTop}>
@@ -21,7 +31,7 @@ export const MainTop = ({ categories = [], loading = false }) => {
                     <HeroCarousel slides={SLIDES} fillHeight />
                 </Grid.Col>
 
-                {topCategories.length > 0 && (
+                {(topCategories.length > 0 || loading) && (
                     <Grid.Col span={{ base: 12, md: 6 }}>
                         <Box style={{ height: '100%' }}>
                             <SectionHeader
@@ -34,16 +44,26 @@ export const MainTop = ({ categories = [], loading = false }) => {
                                 spacing={{ base: 'sm', md: 'md' }}
                             >
                                 {loading
-                                    ? Array.from({ length: 12 }).map((_, index) => (
+                                    ? Array.from({ length: 8 }).map((_, index) => (
                                         <Box key={index} className={styles.skeletonTile} />
                                     ))
-                                    : topCategories.map((category) => (
-                                        <CategoryTile
-                                            key={category.id}
-                                            to={`/catalog/${category.id}`}
-                                            name={category.name}
-                                        />
-                                    ))}
+                                    : tiles.map((category) =>
+                                          category.isSeeAll ? (
+                                              <Link
+                                                  key={category.id}
+                                                  to={category.to}
+                                                  className={styles.seeAllTile}
+                                              >
+                                                  <span className={styles.seeAllText}>{category.name}</span>
+                                              </Link>
+                                          ) : (
+                                              <CategoryTile
+                                                  key={category.id}
+                                                  to={`/catalog/${category.id}`}
+                                                  name={category.name}
+                                              />
+                                          )
+                                      )}
                             </SimpleGrid>
                         </Box>
                     </Grid.Col>

@@ -186,7 +186,7 @@ const OrderDetailsPage = () => {
                 </SimpleGrid>
 
                 <Title order={4} mb="sm">Список товаров</Title>
-                <Table withTableBorder>
+                <Table withTableBorder visibleFrom="sm">
                     <Table.Thead>
                         <Table.Tr>
                             <Table.Th>№</Table.Th>
@@ -212,6 +212,21 @@ const OrderDetailsPage = () => {
                         ))}
                     </Table.Tbody>
                 </Table>
+
+                <Stack gap="sm" hiddenFrom="sm">
+                    {order.items.map((item, idx) => (
+                        <Card key={item.id} withBorder radius="lg" p="md">
+                            <Stack gap="xs">
+                                <Text fw={700}>{idx + 1}. {item.product?.name}</Text>
+                                <Text size="sm">Количество: {item.quantity}</Text>
+                                <Text size="sm">Цена: {formatCurrency(item.productPrice)}</Text>
+                                <Text size="sm">Скидка: {item.productDiscount}%</Text>
+                                <Text size="sm">Цена/шт: {formatCurrency(item.productTotal)}</Text>
+                                <Text size="sm" fw={700}>Итого: {formatCurrency(item.productTotal * item.quantity)}</Text>
+                            </Stack>
+                        </Card>
+                    ))}
+                </Stack>
 
                 <Group justify="flex-end" mt="md">
                     <Text fw={700}>Итоговая сумма: {formatCurrency(order.totalAmount)}</Text>

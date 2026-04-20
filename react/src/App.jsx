@@ -17,6 +17,8 @@ import ProductListPage from './pages/ProductListPage';
 import ProductCreatePage from './pages/ProductCreatePage';
 import ProductEditPage from './pages/ProductEditPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
+import CategoryManagementPage from './pages/CategoryManagementPage';
+import OrderGiftRulesPage from './pages/OrderGiftRulesPage';
 import LoginPage from './pages/LoginPage';
 import UsersPage from './pages/UsersPage';
 import UserCreatePage from './pages/UserCreatePage';
@@ -131,6 +133,8 @@ function App() {
                         <Route path="products/create" element={<ProductCreatePage />} />
                         <Route path="products/view/:id" element={<ProductDetailsPage />} />
                         <Route path="products/edit/:id" element={<ProductEditPage />} />
+                        <Route path="categories" element={<CategoryManagementPage />} />
+                        <Route path="order-gifts" element={<OrderGiftRulesPage />} />
                         <Route path="cities" element={<CitiesPage />} />
                         <Route path="orders" element={<OrdersPage />} />
                         <Route path="promocodes" element={<PromocodesPage />} />

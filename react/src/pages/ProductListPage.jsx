@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
     Button,
+    Card,
     Checkbox,
     Group,
     Loader,
     Modal,
     NumberInput,
+    Pagination,
     Select,
     Stack,
     Table,
@@ -20,6 +22,7 @@ import api from '../api/api';
 import { formatCurrency } from '../utils/formatters';
 
 const defaultCityId = 1;
+const PAGE_SIZE = 12;
 
 const ProductListPage = () => {
     const [products, setProducts] = useState([]);
@@ -31,6 +34,7 @@ const ProductListPage = () => {
     const [discountModal, setDiscountModal] = useState(false);
     const [discountValue, setDiscountValue] = useState(0);
     const [discountType, setDiscountType] = useState('');
+    const [page, setPage] = useState(1);
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -69,10 +73,22 @@ const ProductListPage = () => {
         const q = searchValue.toLowerCase();
         return products.filter(
             (p) =>
-                (selectedCategory ? p.categoryId?.toString() === selectedCategory : true) &&
-                (p.name.toLowerCase().includes(q) || p.subcategoryName?.toLowerCase().includes(q))
+                (q
+                    ? (
+                        p.name.toLowerCase().includes(q) ||
+                        p.subcategoryName?.toLowerCase().includes(q) ||
+                        p.categoryName?.toLowerCase().includes(q)
+                    )
+                    : (selectedCategory ? p.categoryId?.toString() === selectedCategory : true))
         );
     }, [products, selectedCategory, searchValue]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [selectedCategory, searchValue]);
+
+    const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+    const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     const toggleRow = (id) => {
         setSelectedIds((prev) =>
@@ -82,7 +98,9 @@ const ProductListPage = () => {
 
     const toggleAll = () => {
         setSelectedIds((prev) =>
-            prev.length === filteredProducts.length ? [] : filteredProducts.map((p) => p.id)
+            paginatedProducts.every((p) => prev.includes(p.id))
+                ? prev.filter((id) => !paginatedProducts.some((product) => product.id === id))
+                : Array.from(new Set([...prev, ...paginatedProducts.map((p) => p.id)]))
         );
     };
 
@@ -109,7 +127,7 @@ const ProductListPage = () => {
         }
     };
 
-    const allSelected = filteredProducts.length > 0 && selectedIds.length === filteredProducts.length;
+    const allSelected = paginatedProducts.length > 0 && paginatedProducts.every((p) => selectedIds.includes(p.id));
     const someSelected = selectedIds.length > 0 && !allSelected;
 
     return (
@@ -176,63 +194,97 @@ const ProductListPage = () => {
             {loading ? (
                 <Group justify="center" py="xl"><Loader color="miko" /></Group>
             ) : (
-                <Table striped highlightOnHover withTableBorder radius="md" style={{ overflowX: 'auto' }}>
-                    <Table.Thead>
-                        <Table.Tr>
-                            <Table.Th>
-                                <Checkbox
-                                    checked={allSelected}
-                                    indeterminate={someSelected}
-                                    onChange={toggleAll}
-                                />
-                            </Table.Th>
-                            <Table.Th>Название</Table.Th>
-                            <Table.Th>Категория</Table.Th>
-                            <Table.Th>Подкатегория</Table.Th>
-                            <Table.Th>Цена</Table.Th>
-                            <Table.Th>Действия</Table.Th>
-                        </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                        {filteredProducts.map((p) => (
-                            <Table.Tr
-                                key={p.id}
-                                bg={selectedIds.includes(p.id) ? 'var(--mantine-color-miko-0)' : undefined}
-                            >
-                                <Table.Td>
+                <>
+                    <Table striped highlightOnHover withTableBorder radius="md" style={{ overflowX: 'auto' }} visibleFrom="sm">
+                        <Table.Thead>
+                            <Table.Tr>
+                                <Table.Th>
                                     <Checkbox
-                                        checked={selectedIds.includes(p.id)}
-                                        onChange={() => toggleRow(p.id)}
+                                        checked={allSelected}
+                                        indeterminate={someSelected}
+                                        onChange={toggleAll}
                                     />
-                                </Table.Td>
-                                <Table.Td fw={600}>{p.name}</Table.Td>
-                                <Table.Td>{p.categoryName || '—'}</Table.Td>
-                                <Table.Td>{p.subcategoryName || '—'}</Table.Td>
-                                <Table.Td>{formatCurrency(p.defaultPrice)}</Table.Td>
-                                <Table.Td>
+                                </Table.Th>
+                                <Table.Th>Название</Table.Th>
+                                <Table.Th>Категория</Table.Th>
+                                <Table.Th>Подкатегория</Table.Th>
+                                <Table.Th>Цена</Table.Th>
+                                <Table.Th>Действия</Table.Th>
+                            </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                            {paginatedProducts.map((p) => (
+                                <Table.Tr
+                                    key={p.id}
+                                    bg={selectedIds.includes(p.id) ? 'var(--mantine-color-miko-0)' : undefined}
+                                >
+                                    <Table.Td>
+                                        <Checkbox
+                                            checked={selectedIds.includes(p.id)}
+                                            onChange={() => toggleRow(p.id)}
+                                        />
+                                    </Table.Td>
+                                    <Table.Td fw={600}>{p.name}</Table.Td>
+                                    <Table.Td>{p.categoryName || '—'}</Table.Td>
+                                    <Table.Td>{p.subcategoryName || '—'}</Table.Td>
+                                    <Table.Td>{formatCurrency(p.defaultPrice)}</Table.Td>
+                                    <Table.Td>
+                                        <Group gap="xs">
+                                            <Button
+                                                size="xs"
+                                                color="miko"
+                                                radius="md"
+                                                onClick={() => navigate(`/admin/products/view/${p.id}`)}
+                                            >
+                                                Подробно
+                                            </Button>
+                                            <Button
+                                                size="xs"
+                                                variant="default"
+                                                radius="md"
+                                                onClick={() => navigate(`/admin/products/edit/${p.id}`)}
+                                            >
+                                                Изменить
+                                            </Button>
+                                        </Group>
+                                    </Table.Td>
+                                </Table.Tr>
+                            ))}
+                        </Table.Tbody>
+                    </Table>
+
+                    <Stack gap="sm" hiddenFrom="sm">
+                        {paginatedProducts.map((p) => (
+                            <Card key={p.id} withBorder radius="xl" p="md">
+                                <Stack gap="xs">
+                                    <Group justify="space-between" align="flex-start">
+                                        <Stack gap={0}>
+                                            <Text fw={700}>{p.name}</Text>
+                                            <Text size="sm" c="dimmed">{p.categoryName || '—'} · {p.subcategoryName || '—'}</Text>
+                                            <Text size="sm" fw={600}>{formatCurrency(p.defaultPrice)}</Text>
+                                        </Stack>
+                                        <Checkbox
+                                            checked={selectedIds.includes(p.id)}
+                                            onChange={() => toggleRow(p.id)}
+                                        />
+                                    </Group>
                                     <Group gap="xs">
-                                        <Button
-                                            size="xs"
-                                            color="miko"
-                                            radius="md"
-                                            onClick={() => navigate(`/admin/products/view/${p.id}`)}
-                                        >
+                                        <Button size="xs" color="miko" radius="md" onClick={() => navigate(`/admin/products/view/${p.id}`)}>
                                             Подробно
                                         </Button>
-                                        <Button
-                                            size="xs"
-                                            variant="default"
-                                            radius="md"
-                                            onClick={() => navigate(`/admin/products/edit/${p.id}`)}
-                                        >
+                                        <Button size="xs" variant="default" radius="md" onClick={() => navigate(`/admin/products/edit/${p.id}`)}>
                                             Изменить
                                         </Button>
                                     </Group>
-                                </Table.Td>
-                            </Table.Tr>
+                                </Stack>
+                            </Card>
                         ))}
-                    </Table.Tbody>
-                </Table>
+                    </Stack>
+
+                    <Group justify="center" mt="md">
+                        <Pagination value={page} onChange={setPage} total={pageCount} radius="xl" color="miko" />
+                    </Group>
+                </>
             )}
 
             <Modal

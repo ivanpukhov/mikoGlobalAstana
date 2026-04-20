@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
     Button,
+    Card,
     Group,
     Modal,
     Stack,
     Table,
+    Text,
     TextInput,
     Title,
 } from '@mantine/core';
@@ -52,7 +54,7 @@ const CitiesPage = () => {
                 </Button>
             </Group>
 
-            <Table striped highlightOnHover withTableBorder radius="md">
+            <Table striped highlightOnHover withTableBorder radius="md" visibleFrom="sm">
                 <Table.Thead>
                     <Table.Tr>
                         <Table.Th>ID</Table.Th>
@@ -68,6 +70,15 @@ const CitiesPage = () => {
                     ))}
                 </Table.Tbody>
             </Table>
+
+            <Stack gap="sm" hiddenFrom="sm">
+                {cities.map((city) => (
+                    <Card key={city.id} withBorder radius="xl" p="md">
+                        <Text fw={700}>{city.name}</Text>
+                        <Text size="sm" c="dimmed">ID: {city.id}</Text>
+                    </Card>
+                ))}
+            </Stack>
 
             <Modal
                 opened={opened}

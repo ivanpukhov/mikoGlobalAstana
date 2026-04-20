@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
     Badge,
     Button,
+    Card,
     Group,
     Loader,
     Select,
@@ -47,18 +48,13 @@ const OrdersPage = () => {
     const [period, setPeriod] = useState('today');
     const navigate = useNavigate();
 
-    const selectedCity = localStorage.getItem('adminCity') || 'all';
-
     useEffect(() => {
         setLoading(true);
-        const params = new URLSearchParams();
-        if (selectedCity !== 'all') params.append('cityId', selectedCity);
-        const url = `/orders${params.toString() ? `?${params.toString()}` : ''}`;
-        api.get(url)
+        api.get('/orders')
             .then(({ data }) => setAllOrders(data))
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [selectedCity]);
+    }, []);
 
     const orders = useMemo(() => {
         let filtered = [...allOrders];
@@ -166,7 +162,8 @@ const OrdersPage = () => {
             {loading ? (
                 <Group justify="center" py="xl"><Loader color="miko" /></Group>
             ) : (
-                <Table striped highlightOnHover withTableBorder radius="md" style={{ overflowX: 'auto' }}>
+                <>
+                <Table striped highlightOnHover withTableBorder radius="md" style={{ overflowX: 'auto' }} visibleFrom="sm">
                     <Table.Thead>
                         <Table.Tr>
                             <Table.Th>Клиент</Table.Th>
@@ -198,6 +195,30 @@ const OrdersPage = () => {
                         ))}
                     </Table.Tbody>
                 </Table>
+                <Stack gap="sm" hiddenFrom="sm">
+                    {orders.map((order) => (
+                        <Card
+                            key={order.id}
+                            withBorder
+                            radius="xl"
+                            p="md"
+                            onClick={() => navigate(`/admin/orders/${order.id}`)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <Stack gap="xs">
+                                <Text fw={700}>{order.customerName || 'Не указано'}</Text>
+                                <Text size="sm">{order.customerPhone}</Text>
+                                <Text size="sm" c="dimmed">{order.city?.name || '—'}</Text>
+                                <Text size="sm">{formatCurrency(order.totalAmount)}</Text>
+                                <Text size="sm" c="dimmed">{dayjs(order.createdAt).format('DD.MM.YYYY')}</Text>
+                                <Badge color={statusColor(order.status)} variant="light" w="fit-content" size="sm">
+                                    {order.status || 'Новый'}
+                                </Badge>
+                            </Stack>
+                        </Card>
+                    ))}
+                </Stack>
+                </>
             )}
         </Stack>
     );

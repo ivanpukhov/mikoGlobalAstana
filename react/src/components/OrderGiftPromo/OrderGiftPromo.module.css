@@ -1,0 +1,110 @@
+.section {
+    margin-top: 1.5rem;
+}
+
+.shell {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(1rem, 2vw, 2rem);
+    border-radius: 2rem;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.38), transparent 32%),
+        radial-gradient(circle at right bottom, rgba(255, 255, 255, 0.22), transparent 28%),
+        linear-gradient(135deg, #ff6a52 0%, #ff8a45 46%, #ffd77e 100%);
+    box-shadow: 0 20px 56px rgba(209, 92, 52, 0.22);
+}
+
+.shell::before {
+    content: '';
+    position: absolute;
+    inset: auto -8% -28% auto;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    filter: blur(10px);
+    pointer-events: none;
+}
+
+.title {
+    color: #ffffff;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    line-height: 1.05;
+}
+
+.description {
+    max-width: 38rem;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.cta {
+    flex-shrink: 0;
+}
+
+.card {
+    height: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 34px rgba(134, 72, 44, 0.12);
+}
+
+.skeletonCard {
+    height: 18rem;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.imageWrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 11rem;
+    padding: 0.75rem;
+    border-radius: 1.5rem;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 248, 244, 0.88) 100%);
+}
+
+.image {
+    max-height: 10rem;
+    object-fit: contain;
+}
+
+.threshold {
+    color: #d64a38;
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.productName {
+    color: #1f2328;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.note {
+    color: #646b77;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 48em) {
+    .shell {
+        border-radius: 1.5rem;
+    }
+
+    .imageWrap {
+        min-height: 9rem;
+    }
+
+    .image {
+        max-height: 8rem;
+    }
+}

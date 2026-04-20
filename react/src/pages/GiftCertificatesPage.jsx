@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import {
     ActionIcon,
     Button,
+    Card,
     Group,
     Image,
     Loader,
     Modal,
     Stack,
     Table,
+    Text,
     TextInput,
     Title,
 } from '@mantine/core';
@@ -82,7 +84,8 @@ const GiftCertificatesPage = () => {
             {loading ? (
                 <Group justify="center" py="xl"><Loader color="miko" /></Group>
             ) : (
-                <Table striped highlightOnHover withTableBorder radius="md">
+                <>
+                <Table striped highlightOnHover withTableBorder radius="md" visibleFrom="sm">
                     <Table.Thead>
                         <Table.Tr>
                             <Table.Th>ID</Table.Th>
@@ -108,6 +111,21 @@ const GiftCertificatesPage = () => {
                         ))}
                     </Table.Tbody>
                 </Table>
+                <Stack gap="sm" hiddenFrom="sm">
+                    {certificates.map((cert) => (
+                        <Card key={cert.id} withBorder radius="xl" p="md">
+                            <Stack gap="xs">
+                                <Image src={cert.imageUrl} alt={cert.name} h={160} fit="cover" radius="lg" />
+                                <Text fw={700}>{cert.name}</Text>
+                                <Text size="sm" c="dimmed">ID: {cert.id}</Text>
+                                <ActionIcon color="red" variant="light" radius="md" onClick={() => handleDelete(cert.id)}>
+                                    <IconTrash size={16} />
+                                </ActionIcon>
+                            </Stack>
+                        </Card>
+                    ))}
+                </Stack>
+                </>
             )}
 
             <Modal

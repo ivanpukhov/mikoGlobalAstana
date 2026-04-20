@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
     ActionIcon,
     Button,
+    Card,
     Group,
     Loader,
     Stack,
@@ -70,7 +71,8 @@ const UsersPage = () => {
             {loading ? (
                 <Group justify="center" py="xl"><Loader color="miko" /></Group>
             ) : (
-                <Table striped highlightOnHover withTableBorder radius="md">
+                <>
+                <Table striped highlightOnHover withTableBorder radius="md" visibleFrom="sm">
                     <Table.Thead>
                         <Table.Tr>
                             <Table.Th>Имя</Table.Th>
@@ -99,6 +101,28 @@ const UsersPage = () => {
                         ))}
                     </Table.Tbody>
                 </Table>
+                <Stack gap="sm" hiddenFrom="sm">
+                    {users.map((user) => (
+                        <Card key={user.id} withBorder radius="xl" p="md">
+                            <Group justify="space-between" align="flex-start">
+                                <Stack gap={2}>
+                                    <Text fw={700}>{user.name}</Text>
+                                    <Text size="sm" c="dimmed">{user.phoneNumber}</Text>
+                                    <Text size="sm" c="dimmed">{user.city?.name || '—'}</Text>
+                                </Stack>
+                                <ActionIcon
+                                    color="red"
+                                    variant="light"
+                                    radius="md"
+                                    onClick={() => confirmDelete(user.id)}
+                                >
+                                    <IconTrash size={16} />
+                                </ActionIcon>
+                            </Group>
+                        </Card>
+                    ))}
+                </Stack>
+                </>
             )}
         </Stack>
     );

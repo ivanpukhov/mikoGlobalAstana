@@ -31,15 +31,14 @@ const LoginPage = () => {
         setLoading(true);
         try {
             const { data } = await api.post('/users/login', values);
-            const city = data.user.cityId === null ? 'all' : data.user.cityId.toString();
 
             localStorage.setItem('token', data.token);
             localStorage.setItem('adminName', data.user.name);
             localStorage.setItem('phoneNumber', data.user.phoneNumber);
-            localStorage.setItem('adminCity', city);
+            localStorage.removeItem('adminCity');
 
             notifications.show({ color: 'teal', message: data.message || 'Успешный вход' });
-            navigate(`/admin/statistics?city=${city}`);
+            navigate('/admin/statistics');
         } catch (error) {
             notifications.show({ color: 'red', message: 'Ошибка входа. Проверьте данные.' });
         } finally {

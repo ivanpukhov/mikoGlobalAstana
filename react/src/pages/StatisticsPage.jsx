@@ -60,10 +60,9 @@ const StatisticsPage = () => {
 
     useEffect(() => {
         setLoading(true);
-        const cityId = localStorage.getItem('adminCity') || 'all';
         const startDate = dateRange[0].format('YYYY-MM-DDTHH:mm:ss');
         const endDate = dateRange[1].format('YYYY-MM-DDTHH:mm:ss');
-        api.get(`/orders/statistics?cityId=${cityId}&startDate=${startDate}&endDate=${endDate}`)
+        api.get(`/orders/statistics?startDate=${startDate}&endDate=${endDate}`)
             .then(({ data }) => { setStatistics(data); setError(''); })
             .catch(() => setError('Ошибка загрузки данных. Повторите попытку позже.'))
             .finally(() => setLoading(false));

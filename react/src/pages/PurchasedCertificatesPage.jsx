@@ -3,6 +3,7 @@ import {
     ActionIcon,
     Badge,
     Button,
+    Card,
     Group,
     Loader,
     Stack,
@@ -86,7 +87,8 @@ const PurchasedCertificatesPage = () => {
             {loading ? (
                 <Group justify="center" py="xl"><Loader color="miko" /></Group>
             ) : (
-                <Table striped highlightOnHover withTableBorder radius="md">
+                <>
+                <Table striped highlightOnHover withTableBorder radius="md" visibleFrom="sm">
                     <Table.Thead>
                         <Table.Tr>
                             <Table.Th>ID</Table.Th>
@@ -145,6 +147,38 @@ const PurchasedCertificatesPage = () => {
                         ))}
                     </Table.Tbody>
                 </Table>
+                <Stack gap="sm" hiddenFrom="sm">
+                    {certs.map((c) => (
+                        <Card key={c.id} withBorder radius="xl" p="md">
+                            <Stack gap="xs">
+                                <Text fw={700}>Сертификат #{c.id}</Text>
+                                <Text size="sm">Отправитель: {c.senderPhone}</Text>
+                                <Text size="sm">Получатель: {c.recipientPhone}</Text>
+                                <Text size="sm">Сумма: {formatCurrency(c.amount, 'KZT')}</Text>
+                                <Text size="sm">Код: {c.code}</Text>
+                                <Badge color={statusColor(c.status)} variant="light" w="fit-content">
+                                    {c.status?.toUpperCase()}
+                                </Badge>
+                                <Group gap="xs">
+                                    {c.status === 'ожидает оплаты' && (
+                                        <Button size="xs" color="miko" radius="md" variant="light" onClick={() => confirmPayment(c.id)}>
+                                            Подтвердить оплату
+                                        </Button>
+                                    )}
+                                    {c.status === 'активирован' && (
+                                        <Button size="xs" radius="md" variant="default" onClick={() => markAsUsed(c.id)}>
+                                            Использован
+                                        </Button>
+                                    )}
+                                    <ActionIcon color="red" variant="light" radius="md" onClick={() => confirmDelete(c.id)}>
+                                        <IconTrash size={16} />
+                                    </ActionIcon>
+                                </Group>
+                            </Stack>
+                        </Card>
+                    ))}
+                </Stack>
+                </>
             )}
         </Stack>
     );

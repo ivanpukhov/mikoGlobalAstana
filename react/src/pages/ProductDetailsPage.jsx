@@ -7,6 +7,7 @@ import {
     Loader,
     Modal,
     NumberInput,
+    SimpleGrid,
     Stack,
     Table,
     Text,
@@ -143,7 +144,7 @@ const ProductDetailsPage = () => {
                     />
 
                     <Title order={4}>Цены и доступность</Title>
-                    <Table withTableBorder style={{ overflowX: 'auto' }}>
+                    <Table withTableBorder style={{ overflowX: 'auto' }} visibleFrom="sm">
                         <Table.Thead>
                             <Table.Tr>
                                 <Table.Th>Город</Table.Th>
@@ -198,6 +199,47 @@ const ProductDetailsPage = () => {
                             ))}
                         </Table.Tbody>
                     </Table>
+
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" hiddenFrom="sm">
+                        {product.prices.map((row) => (
+                            <Card key={row.cityId} withBorder radius="lg" p="md">
+                                <Stack gap="xs">
+                                    <Text fw={700}>{getCityName(row.cityId)}</Text>
+                                    <Text size="sm">Цена: {formatCurrency(row.price)}</Text>
+                                    <Text size="sm">Скидка: {row.discount}%</Text>
+                                    <Badge color={row.availability ? 'teal' : 'red'} variant="light" w="fit-content">
+                                        {row.availability ? 'В наличии' : 'Нет в наличии'}
+                                    </Badge>
+                                    <Button
+                                        size="xs"
+                                        radius="md"
+                                        color={row.availability ? 'red' : 'teal'}
+                                        variant="light"
+                                        loading={loadingCityActions[row.cityId]}
+                                        onClick={() => handleToggleAvailability(row.cityId, !row.availability)}
+                                    >
+                                        {row.availability ? 'Снять с продажи' : 'Вернуть в продажу'}
+                                    </Button>
+                                    <Button
+                                        size="xs"
+                                        radius="md"
+                                        variant="default"
+                                        onClick={() => setPriceModal({ open: true, cityId: row.cityId, value: row.price })}
+                                    >
+                                        Изменить цену
+                                    </Button>
+                                    <Button
+                                        size="xs"
+                                        radius="md"
+                                        variant="default"
+                                        onClick={() => setDiscountModal({ open: true, cityId: row.cityId, value: row.discount })}
+                                    >
+                                        Изменить скидку
+                                    </Button>
+                                </Stack>
+                            </Card>
+                        ))}
+                    </SimpleGrid>
 
                     <Group justify="space-between" mt="sm">
                         <Button

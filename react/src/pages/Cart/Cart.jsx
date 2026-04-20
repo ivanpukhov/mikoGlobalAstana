@@ -19,7 +19,6 @@ import { CartList } from './CartList';
 import api from '../../api/api';
 import { EmptyState } from '../../components/ui';
 import { formatCurrency } from '../../utils/formatters';
-import { EVERY_ORDER_GIFT, getNextOrderGiftTier, getOrderGiftTier } from '../../utils/orderGifts';
 
 export const Cart = () => {
     const [form, setForm] = useState({
@@ -37,6 +36,7 @@ export const Cart = () => {
     const [promoData, setPromoData] = useState(null);
     const [isCheckingPromo, setIsCheckingPromo] = useState(false);
     const [giftData, setGiftData] = useState(null);
+    const [orderGiftRules, setOrderGiftRules] = useState([]);
 
     const navigate = useNavigate();
 
@@ -61,6 +61,10 @@ export const Cart = () => {
 
     useEffect(() => {
         recalculateTotal();
+        api.get('/order-gift-rules')
+            .then(({ data }) => setOrderGiftRules(Array.isArray(data) ? data : []))
+            .catch(() => setOrderGiftRules([]));
+
         const gift = localStorage.getItem('gift');
         if (gift) {
             api.get(`/purchased-certificates/validate/${gift}`)
@@ -125,8 +129,17 @@ export const Cart = () => {
           )
         : totalPrice;
 
-    const currentGiftTier = getOrderGiftTier(totalPrice);
-    const nextGiftTier = getNextOrderGiftTier(totalPrice);
+    const everyOrderGift = orderGiftRules.find((rule) => Number(rule.minAmount) === 0);
+    const currentGiftTier = orderGiftRules.find(({ minAmount, maxAmount }) => {
+        const min = Number(minAmount || 0);
+        const max = maxAmount === null || typeof maxAmount === 'undefined'
+            ? Number.POSITIVE_INFINITY
+            : Number(maxAmount);
+        return totalPrice >= min && totalPrice <= max && min > 0;
+    }) || null;
+    const nextGiftTier = orderGiftRules
+        .filter((rule) => Number(rule.minAmount || 0) > totalPrice)
+        .sort((a, b) => Number(a.minAmount || 0) - Number(b.minAmount || 0))[0] || null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -362,12 +375,21 @@ export const Cart = () => {
 
                                 <Paper p="sm" radius="md" bg="yellow.0" style={{ border: '1px solid var(--mantine-color-yellow-3)' }}>
                                     <Text fw={600} size="sm">🎁 Подарок к заказу</Text>
-                                    <Text size="sm">При каждом заказе: <Text span fw={700}>{EVERY_ORDER_GIFT}</Text></Text>
+                                    {everyOrderGift && (
+                                        <Text size="sm">
+                                            При каждом заказе:
+                                            <Text span fw={700}> {everyOrderGift.product?.name || 'Подарок'}</Text>
+                                        </Text>
+                                    )}
                                     {currentGiftTier ? (
-                                        <Text size="sm" mt={4}>По вашей сумме: <Text span fw={700}>{currentGiftTier.gift}</Text></Text>
+                                        <Text size="sm" mt={4}>
+                                            По вашей сумме:
+                                            <Text span fw={700}> {currentGiftTier.product?.name || 'Подарок'}</Text>
+                                        </Text>
                                     ) : nextGiftTier ? (
                                         <Text size="sm" mt={4}>
-                                            Добавьте ещё <Text span fw={700}>{formatCurrency(nextGiftTier.min - totalPrice)}</Text> и получите: <Text span fw={700}>{nextGiftTier.gift}</Text>
+                                            Добавьте ещё <Text span fw={700}>{formatCurrency(nextGiftTier.minAmount - totalPrice)}</Text> и получите:
+                                            <Text span fw={700}> {nextGiftTier.product?.name || 'Подарок'}</Text>
                                         </Text>
                                     ) : null}
                                 </Paper>

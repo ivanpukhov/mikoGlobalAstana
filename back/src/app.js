@@ -11,6 +11,8 @@ const { indexProducts } = require("./utils/meilisearch");
 const userRoutes = require('./routes/userRoutes');
 const giftCertificateRoutes = require('./routes/giftCertificateRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const orderGiftRuleRoutes = require('./routes/orderGiftRuleRoutes');
+const { seedDefaultOrderGiftRules } = require('./controllers/orderGiftRuleController');
 
 const purchasedCertificateRoutes = require('./routes/purchasedCertificateRoutes');
 app.use(express.json({ limit: '50mb' }));
@@ -28,10 +30,12 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/order-gift-rules', orderGiftRuleRoutes);
 // Синхронизация базы данных и индексация
 (async () => {
     try {
         await sequelize.sync();
+        await seedDefaultOrderGiftRules();
         console.log('База данных синхронизирована.');
         await indexProducts();
         console.log('Индексация синхронизирована.');

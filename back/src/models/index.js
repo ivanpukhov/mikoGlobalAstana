@@ -13,6 +13,7 @@ const GiftCertificate = require('./GiftCertificate');
 const PurchasedCertificate = require('./PurchasedCertificate');
 const NotificationSetting = require('./NotificationSetting');
 const NotificationTemplate = require('./NotificationTemplate');
+const OrderGiftRule = require('./OrderGiftRule');
 
 // Ассоциации
 Category.hasMany(Subcategory, { foreignKey: 'categoryId', as: 'subcategories' });
@@ -26,6 +27,9 @@ Product.belongsTo(Subcategory, { foreignKey: 'subcategoryId', as: 'subcategory' 
 
 Product.hasMany(ProductPrice, { foreignKey: 'productId', as: 'prices' });
 ProductPrice.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
+
+Product.hasMany(OrderGiftRule, { foreignKey: 'productId', as: 'giftRules' });
+OrderGiftRule.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
 
 City.hasMany(ProductPrice, { foreignKey: 'cityId', as: 'productPrices' });
 ProductPrice.belongsTo(City, { foreignKey: 'cityId', as: 'city' });
@@ -51,5 +55,6 @@ module.exports = {
     GiftCertificate,
     PurchasedCertificate,
     NotificationSetting,
-    NotificationTemplate
+    NotificationTemplate,
+    OrderGiftRule,
 };

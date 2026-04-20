@@ -2,17 +2,14 @@ import { useEffect, useState } from 'react';
 import {
     AppShell,
     Avatar,
-    Badge,
     Burger,
     Group,
     NavLink,
-    Select,
     Text,
-    Title,
-    UnstyledButton,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
+    IconCategory,
     IconChartBar,
     IconBell,
     IconBuildingStore,
@@ -26,11 +23,12 @@ import {
     IconUsers,
 } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import api from '../api/api';
 import logo from '../images/logo-admin.svg';
 
 const NAV_ITEMS = [
     { to: '/admin/products',                icon: IconBuildingStore, label: 'Товары' },
+    { to: '/admin/categories',              icon: IconCategory,      label: 'Категории' },
+    { to: '/admin/order-gifts',             icon: IconGift,          label: 'Подарки к заказу' },
     { to: '/admin/cities',                  icon: IconMapPin,        label: 'Города' },
     { to: '/admin/orders',                  icon: IconShoppingCart,  label: 'Заказы' },
     { to: '/admin/statistics',              icon: IconChartBar,      label: 'Статистика' },
@@ -43,8 +41,6 @@ const NAV_ITEMS = [
 
 const AdminLayout = () => {
     const [opened, { toggle, close }] = useDisclosure(false);
-    const [cities, setCities] = useState([]);
-    const [selectedCity, setSelectedCity] = useState(localStorage.getItem('adminCity') || 'all');
     const [currentTime, setCurrentTime] = useState(new Date());
     const navigate = useNavigate();
     const location = useLocation();
@@ -53,29 +49,16 @@ const AdminLayout = () => {
 
     useEffect(() => {
         if (!token) navigate('/admin/login');
-        api.get('/cities')
-            .then(({ data }) => setCities(data))
-            .catch(console.error);
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, [token, navigate]);
 
-    const handleCityChange = (value) => {
-        setSelectedCity(value);
-        localStorage.setItem('adminCity', value);
-        window.location.reload();
-    };
-
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('adminName');
+        localStorage.removeItem('adminCity');
         navigate('/admin/login');
     };
-
-    const cityOptions = [
-        { value: 'all', label: 'Все города' },
-        ...cities.map((c) => ({ value: c.id.toString(), label: c.name })),
-    ];
 
     return (
         <AppShell
@@ -96,14 +79,6 @@ const AdminLayout = () => {
                             {(adminName || 'А')[0].toUpperCase()}
                         </Avatar>
                         <Text size="sm" fw={500} visibleFrom="xs">Привет, {adminName || 'Админ'}!</Text>
-                        <Select
-                            value={selectedCity}
-                            onChange={handleCityChange}
-                            data={cityOptions}
-                            size="xs"
-                            w={160}
-                            radius="md"
-                        />
                     </Group>
                 </Group>
             </AppShell.Header>
