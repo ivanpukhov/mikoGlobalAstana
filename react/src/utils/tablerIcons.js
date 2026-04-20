@@ -7,11 +7,15 @@ const EXCLUDED_EXPORTS = new Set([
     'default',
 ]);
 
+const isIconComponent = (value) =>
+    typeof value === 'function' ||
+    (value && typeof value === 'object' && typeof value.render === 'function');
+
 export const TABLER_ICON_OPTIONS = Object.entries(TablerIcons)
     .filter(([name, value]) =>
         name.startsWith('Icon') &&
         !EXCLUDED_EXPORTS.has(name) &&
-        typeof value === 'function'
+        isIconComponent(value)
     )
     .sort(([left], [right]) => left.localeCompare(right, 'en'));
 

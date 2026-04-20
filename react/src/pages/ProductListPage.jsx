@@ -28,6 +28,7 @@ const ProductListPage = () => {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [saleStatusFilter, setSaleStatusFilter] = useState('all');
     const [searchValue, setSearchValue] = useState('');
     const [loading, setLoading] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -54,6 +55,7 @@ const ProductListPage = () => {
                 subcategoryName: p.subcategory?.name,
                 defaultPrice: p.prices[0]?.price || 0,
                 imageUrl: `/api${p.image}`,
+                isOffSale: Array.isArray(p.prices) && p.prices.length > 0 && p.prices.every((price) => price.availability === false),
             }));
             setProducts(transformed);
             const uniqueCategories = Array.from(
@@ -71,21 +73,27 @@ const ProductListPage = () => {
 
     const filteredProducts = useMemo(() => {
         const q = searchValue.toLowerCase();
+
         return products.filter(
-            (p) =>
-                (q
+            (p) => {
+                const matchesSearch = q
                     ? (
                         p.name.toLowerCase().includes(q) ||
                         p.subcategoryName?.toLowerCase().includes(q) ||
                         p.categoryName?.toLowerCase().includes(q)
                     )
-                    : (selectedCategory ? p.categoryId?.toString() === selectedCategory : true))
+                    : true;
+                const matchesCategory = selectedCategory ? p.categoryId?.toString() === selectedCategory : true;
+                const matchesSaleStatus = saleStatusFilter === 'off-sale' ? p.isOffSale : true;
+
+                return matchesSearch && matchesCategory && matchesSaleStatus;
+            }
         );
-    }, [products, selectedCategory, searchValue]);
+    }, [products, saleStatusFilter, searchValue, selectedCategory]);
 
     useEffect(() => {
         setPage(1);
-    }, [selectedCategory, searchValue]);
+    }, [saleStatusFilter, searchValue, selectedCategory]);
 
     const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
     const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -160,6 +168,16 @@ const ProductListPage = () => {
                     clearable
                     data={categories.map((c) => ({ value: c.id.toString(), label: c.name }))}
                     w={220}
+                    radius="md"
+                />
+                <Select
+                    value={saleStatusFilter}
+                    onChange={(value) => setSaleStatusFilter(value || 'all')}
+                    data={[
+                        { value: 'all', label: 'Все товары' },
+                        { value: 'off-sale', label: 'Снятые с продажи' },
+                    ]}
+                    w={240}
                     radius="md"
                 />
             </Group>

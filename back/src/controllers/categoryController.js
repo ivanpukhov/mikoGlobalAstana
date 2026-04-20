@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { Category, Subcategory, Product, sequelize } = require('../models');
 
 const getProductsByCategory = async (req, res) => {
@@ -34,45 +35,72 @@ const getAllCategory = async (req, res) => {
 
 const getCategoryAdminSummary = async (req, res) => {
     try {
-        const categories = await Category.findAll({
-            include: [
-                {
-                    model: Product,
-                    as: 'products',
-                    attributes: ['id', 'name', 'subcategoryId'],
+        const [categories, productCounts, subcategoryCounts, unassignedProductCounts, nonEmptySubcategoryCounts] = await Promise.all([
+            Category.findAll({
+                attributes: ['id', 'name', 'icon'],
+                order: [['name', 'ASC']],
+            }),
+            Product.findAll({
+                attributes: [
+                    'categoryId',
+                    [sequelize.fn('COUNT', sequelize.col('id')), 'productCount'],
+                ],
+                group: ['categoryId'],
+                raw: true,
+            }),
+            Subcategory.findAll({
+                attributes: [
+                    'categoryId',
+                    [sequelize.fn('COUNT', sequelize.col('id')), 'subcategoryCount'],
+                ],
+                group: ['categoryId'],
+                raw: true,
+            }),
+            Product.findAll({
+                attributes: [
+                    'categoryId',
+                    [sequelize.fn('COUNT', sequelize.col('id')), 'unassignedProductCount'],
+                ],
+                where: { subcategoryId: null },
+                group: ['categoryId'],
+                raw: true,
+            }),
+            Product.findAll({
+                attributes: [
+                    'categoryId',
+                    [sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('subcategoryId'))), 'nonEmptySubcategoryCount'],
+                ],
+                where: {
+                    subcategoryId: {
+                        [Op.ne]: null,
+                    },
                 },
-                {
-                    model: Subcategory,
-                    as: 'subcategories',
-                    attributes: ['id', 'name', 'categoryId'],
-                    include: [
-                        {
-                            model: Product,
-                            as: 'products',
-                            attributes: ['id'],
-                        },
-                    ],
-                },
-            ],
-            order: [
-                ['name', 'ASC'],
-                [{ model: Subcategory, as: 'subcategories' }, 'name', 'ASC'],
-            ],
-        });
+                group: ['categoryId'],
+                raw: true,
+            }),
+        ]);
+
+        const productCountByCategoryId = new Map(
+            productCounts.map((item) => [Number(item.categoryId), Number(item.productCount) || 0])
+        );
+        const subcategoryCountByCategoryId = new Map(
+            subcategoryCounts.map((item) => [Number(item.categoryId), Number(item.subcategoryCount) || 0])
+        );
+        const unassignedProductCountByCategoryId = new Map(
+            unassignedProductCounts.map((item) => [Number(item.categoryId), Number(item.unassignedProductCount) || 0])
+        );
+        const nonEmptySubcategoryCountByCategoryId = new Map(
+            nonEmptySubcategoryCounts.map((item) => [Number(item.categoryId), Number(item.nonEmptySubcategoryCount) || 0])
+        );
 
         const result = categories.map((category) => ({
             id: category.id,
             name: category.name,
             icon: category.icon,
-            productCount: category.products.length,
-            subcategoryCount: category.subcategories.length,
-            unassignedProductCount: category.products.filter((product) => !product.subcategoryId).length,
-            subcategories: category.subcategories.map((subcategory) => ({
-                id: subcategory.id,
-                name: subcategory.name,
-                categoryId: subcategory.categoryId,
-                productCount: subcategory.products.length,
-            })),
+            productCount: productCountByCategoryId.get(category.id) || 0,
+            subcategoryCount: subcategoryCountByCategoryId.get(category.id) || 0,
+            unassignedProductCount: unassignedProductCountByCategoryId.get(category.id) || 0,
+            nonEmptySubcategoryCount: nonEmptySubcategoryCountByCategoryId.get(category.id) || 0,
         }));
 
         res.json(result);
@@ -100,14 +128,10 @@ const getProductsBySubcategory = async (req, res) => {
 
 const getSubcategoriesByCategory = async (req, res) => {
     const { id } = req.params;
+    const excludeEmpty = req.query.excludeEmpty === '1' || req.query.excludeEmpty === 'true';
 
     try {
         const category = await Category.findByPk(id, {
-            include: {
-                model: Subcategory,
-                as: 'subcategories',
-                attributes: ['id', 'name'], // Только id и name для подкатегорий
-            },
             attributes: ['id', 'name', 'icon'], // Только нужные поля для категории
         });
 
@@ -115,7 +139,39 @@ const getSubcategoriesByCategory = async (req, res) => {
             return res.status(404).json({ message: "Категория не найдена" });
         }
 
-        res.json(category);
+        const subcategories = await Subcategory.findAll({
+            where: { categoryId: id },
+            attributes: [
+                'id',
+                'name',
+                'categoryId',
+                [sequelize.fn('COUNT', sequelize.col('products.id')), 'productCount'],
+            ],
+            include: [{
+                model: Product,
+                as: 'products',
+                attributes: [],
+                required: false,
+            }],
+            group: ['Subcategory.id', 'Subcategory.name', 'Subcategory.categoryId'],
+            order: [['name', 'ASC']],
+        });
+
+        const normalizedSubcategories = subcategories
+            .map((subcategory) => ({
+                id: subcategory.id,
+                name: subcategory.name,
+                categoryId: subcategory.categoryId,
+                productCount: Number(subcategory.get('productCount')) || 0,
+            }))
+            .filter((subcategory) => !excludeEmpty || subcategory.productCount > 0);
+
+        res.json({
+            id: category.id,
+            name: category.name,
+            icon: category.icon,
+            subcategories: normalizedSubcategories,
+        });
     } catch (error) {
         console.error("Ошибка при получении подкатегорий:", error);
         res.status(500).json({ error: error.message });

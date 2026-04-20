@@ -20,10 +20,13 @@ import { findTablerIcon, TABLER_ICON_OPTIONS } from '../utils/tablerIcons';
 
 const CategoryManagementPage = () => {
     const [categories, setCategories] = useState([]);
+    const [subcategoriesByCategory, setSubcategoriesByCategory] = useState({});
+    const [openCategories, setOpenCategories] = useState({});
+    const [subcategoriesLoading, setSubcategoriesLoading] = useState({});
     const [loading, setLoading] = useState(false);
     const [categoryEdit, setCategoryEdit] = useState({ open: false, id: null, name: '', icon: '' });
     const [categoryDelete, setCategoryDelete] = useState({ open: false, id: null, targetCategoryId: null });
-    const [subcategoryEdit, setSubcategoryEdit] = useState({ open: false, id: null, name: '' });
+    const [subcategoryEdit, setSubcategoryEdit] = useState({ open: false, id: null, categoryId: null, name: '' });
     const [subcategoryDelete, setSubcategoryDelete] = useState({ open: false, id: null, categoryId: null, targetSubcategoryId: null });
     const [iconPickerOpen, setIconPickerOpen] = useState(false);
     const [iconSearch, setIconSearch] = useState('');
@@ -32,7 +35,16 @@ const CategoryManagementPage = () => {
         setLoading(true);
         try {
             const { data } = await api.get('/categories/admin/summary');
-            setCategories(Array.isArray(data) ? data : []);
+            const nextCategories = Array.isArray(data) ? data : [];
+            const availableCategoryIds = new Set(nextCategories.map((category) => category.id));
+
+            setCategories(nextCategories);
+            setOpenCategories((prev) => Object.fromEntries(
+                Object.entries(prev).filter(([categoryId]) => availableCategoryIds.has(Number(categoryId)))
+            ));
+            setSubcategoriesByCategory((prev) => Object.fromEntries(
+                Object.entries(prev).filter(([categoryId]) => availableCategoryIds.has(Number(categoryId)))
+            ));
         } catch {
             notifications.show({ color: 'red', message: 'Не удалось загрузить категории.' });
         } finally {
@@ -50,14 +62,56 @@ const CategoryManagementPage = () => {
     );
 
     const selectedSubcategoryOptions = useMemo(() => {
-        const category = categories.find((item) => item.id === subcategoryDelete.categoryId);
-        return (category?.subcategories || [])
+        return (subcategoriesByCategory[subcategoryDelete.categoryId] || [])
             .filter((subcategory) => subcategory.id !== subcategoryDelete.id)
             .map((subcategory) => ({
                 value: String(subcategory.id),
                 label: subcategory.name,
             }));
-    }, [categories, subcategoryDelete.categoryId, subcategoryDelete.id]);
+    }, [subcategoriesByCategory, subcategoryDelete.categoryId, subcategoryDelete.id]);
+
+    const fetchCategorySubcategories = async (categoryId, options = {}) => {
+        const { force = false } = options;
+
+        if (!categoryId) {
+            return [];
+        }
+
+        if (!force && subcategoriesByCategory[categoryId]) {
+            return subcategoriesByCategory[categoryId];
+        }
+
+        setSubcategoriesLoading((prev) => ({ ...prev, [categoryId]: true }));
+
+        try {
+            const { data } = await api.get(`/categories/${categoryId}/subcategories`, {
+                params: { excludeEmpty: true },
+            });
+            const nextSubcategories = Array.isArray(data?.subcategories) ? data.subcategories : [];
+
+            setSubcategoriesByCategory((prev) => ({
+                ...prev,
+                [categoryId]: nextSubcategories,
+            }));
+
+            return nextSubcategories;
+        } catch {
+            notifications.show({ color: 'red', message: 'Не удалось загрузить подкатегории.' });
+            return [];
+        } finally {
+            setSubcategoriesLoading((prev) => ({ ...prev, [categoryId]: false }));
+        }
+    };
+
+    const toggleCategorySubcategories = async (categoryId) => {
+        if (openCategories[categoryId]) {
+            setOpenCategories((prev) => ({ ...prev, [categoryId]: false }));
+            return;
+        }
+
+        setOpenCategories((prev) => ({ ...prev, [categoryId]: true }));
+        await fetchCategorySubcategories(categoryId);
+    };
 
     const saveCategory = async () => {
         try {
@@ -90,7 +144,8 @@ const CategoryManagementPage = () => {
         try {
             await api.patch(`/categories/subcategories/${subcategoryEdit.id}`, { name: subcategoryEdit.name });
             notifications.show({ color: 'teal', message: 'Подкатегория обновлена.' });
-            setSubcategoryEdit({ open: false, id: null, name: '' });
+            await fetchCategorySubcategories(subcategoryEdit.categoryId, { force: true });
+            setSubcategoryEdit({ open: false, id: null, categoryId: null, name: '' });
             fetchSummary();
         } catch (error) {
             notifications.show({ color: 'red', message: error.response?.data?.message || 'Ошибка обновления подкатегории.' });
@@ -103,6 +158,7 @@ const CategoryManagementPage = () => {
                 data: { targetSubcategoryId: subcategoryDelete.targetSubcategoryId },
             });
             notifications.show({ color: 'teal', message: 'Подкатегория удалена, товары перенесены.' });
+            await fetchCategorySubcategories(subcategoryDelete.categoryId, { force: true });
             setSubcategoryDelete({ open: false, id: null, categoryId: null, targetSubcategoryId: null });
             fetchSummary();
         } catch (error) {
@@ -112,12 +168,18 @@ const CategoryManagementPage = () => {
 
     const filteredIcons = useMemo(() => {
         const query = iconSearch.trim().toLowerCase();
+        const normalizedQuery = query.replace(/\s+/g, '');
 
         if (!query) {
             return TABLER_ICON_OPTIONS;
         }
 
-        return TABLER_ICON_OPTIONS.filter(([name]) => name.toLowerCase().includes(query));
+        return TABLER_ICON_OPTIONS.filter(([name]) => {
+            const normalizedName = name.toLowerCase();
+            const shortName = normalizedName.replace(/^icon/, '');
+
+            return normalizedName.includes(query) || shortName.includes(normalizedQuery);
+        });
     }, [iconSearch]);
 
     const SelectedCategoryIcon = findTablerIcon(categoryEdit.icon);
@@ -150,7 +212,7 @@ const CategoryManagementPage = () => {
                                         <Title order={4}>{category.name}</Title>
                                     </Group>
                                     <Text size="sm" c="dimmed">
-                                        Товаров: {category.productCount}. Подкатегорий: {category.subcategoryCount}. Без подкатегории: {category.unassignedProductCount}
+                                        Товаров: {category.productCount}. Подкатегорий с товарами: {category.nonEmptySubcategoryCount}. Всего подкатегорий: {category.subcategoryCount}. Без подкатегории: {category.unassignedProductCount}
                                     </Text>
                                 </Stack>
                                 <Group gap="xs">
@@ -185,49 +247,75 @@ const CategoryManagementPage = () => {
                             </Group>
 
                             <Stack gap="xs">
-                                {(category.subcategories || []).map((subcategory) => (
-                                    <Card key={subcategory.id} radius="lg" withBorder p="md" bg="gray.0">
-                                        <Group justify="space-between" align="center">
-                                            <Stack gap={0}>
-                                                <Text fw={700}>{subcategory.name}</Text>
-                                                <Text size="sm" c="dimmed">Товаров: {subcategory.productCount}</Text>
-                                            </Stack>
-                                            <Group gap="xs">
-                                                <ActionIcon
-                                                    variant="light"
-                                                    color="miko"
-                                                    radius="md"
-                                                    onClick={() =>
-                                                        setSubcategoryEdit({
-                                                            open: true,
-                                                            id: subcategory.id,
-                                                            name: subcategory.name,
-                                                        })
-                                                    }
-                                                >
-                                                    <IconEdit size={16} />
-                                                </ActionIcon>
-                                                <ActionIcon
-                                                    variant="light"
-                                                    color="red"
-                                                    radius="md"
-                                                    disabled={(category.subcategories || []).length < 2}
-                                                    onClick={() =>
-                                                        setSubcategoryDelete({
-                                                            open: true,
-                                                            id: subcategory.id,
-                                                            categoryId: category.id,
-                                                            targetSubcategoryId:
-                                                                (category.subcategories || []).find((item) => item.id !== subcategory.id)?.id?.toString() || null,
-                                                        })
-                                                    }
-                                                >
-                                                    <IconTrash size={16} />
-                                                </ActionIcon>
-                                            </Group>
-                                        </Group>
-                                    </Card>
-                                ))}
+                                <Group justify="space-between" align="center">
+                                    <Text size="sm" c="dimmed">
+                                        Подкатегории загружаются отдельно, чтобы страница открывалась быстрее.
+                                    </Text>
+                                    <Button
+                                        variant={openCategories[category.id] ? 'default' : 'light'}
+                                        color="miko"
+                                        radius="md"
+                                        onClick={() => toggleCategorySubcategories(category.id)}
+                                        loading={Boolean(subcategoriesLoading[category.id])}
+                                    >
+                                        {openCategories[category.id] ? 'Скрыть подкатегории' : 'Открыть подкатегории'}
+                                    </Button>
+                                </Group>
+
+                                {openCategories[category.id] ? (
+                                    <Stack gap="xs">
+                                        {(subcategoriesByCategory[category.id] || []).length === 0 ? (
+                                            <Text size="sm" c="dimmed">
+                                                В этой категории нет подкатегорий с товарами.
+                                            </Text>
+                                        ) : (
+                                            (subcategoriesByCategory[category.id] || []).map((subcategory) => (
+                                                <Card key={subcategory.id} radius="lg" withBorder p="md" bg="gray.0">
+                                                    <Group justify="space-between" align="center">
+                                                        <Stack gap={0}>
+                                                            <Text fw={700}>{subcategory.name}</Text>
+                                                            <Text size="sm" c="dimmed">Товаров: {subcategory.productCount}</Text>
+                                                        </Stack>
+                                                        <Group gap="xs">
+                                                            <ActionIcon
+                                                                variant="light"
+                                                                color="miko"
+                                                                radius="md"
+                                                                onClick={() =>
+                                                                    setSubcategoryEdit({
+                                                                        open: true,
+                                                                        id: subcategory.id,
+                                                                        categoryId: category.id,
+                                                                        name: subcategory.name,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <IconEdit size={16} />
+                                                            </ActionIcon>
+                                                            <ActionIcon
+                                                                variant="light"
+                                                                color="red"
+                                                                radius="md"
+                                                                disabled={(subcategoriesByCategory[category.id] || []).length < 2}
+                                                                onClick={() =>
+                                                                    setSubcategoryDelete({
+                                                                        open: true,
+                                                                        id: subcategory.id,
+                                                                        categoryId: category.id,
+                                                                        targetSubcategoryId:
+                                                                            (subcategoriesByCategory[category.id] || []).find((item) => item.id !== subcategory.id)?.id?.toString() || null,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <IconTrash size={16} />
+                                                            </ActionIcon>
+                                                        </Group>
+                                                    </Group>
+                                                </Card>
+                                            ))
+                                        )}
+                                    </Stack>
+                                ) : null}
                             </Stack>
                         </Stack>
                     </Card>
@@ -312,7 +400,7 @@ const CategoryManagementPage = () => {
 
             <Modal
                 opened={subcategoryEdit.open}
-                onClose={() => setSubcategoryEdit({ open: false, id: null, name: '' })}
+                onClose={() => setSubcategoryEdit({ open: false, id: null, categoryId: null, name: '' })}
                 title="Изменить подкатегорию"
                 centered
                 radius="lg"
@@ -325,7 +413,7 @@ const CategoryManagementPage = () => {
                         radius="md"
                     />
                     <Group justify="flex-end">
-                        <Button variant="default" radius="md" onClick={() => setSubcategoryEdit({ open: false, id: null, name: '' })}>Отмена</Button>
+                        <Button variant="default" radius="md" onClick={() => setSubcategoryEdit({ open: false, id: null, categoryId: null, name: '' })}>Отмена</Button>
                         <Button color="miko" radius="md" onClick={saveSubcategory}>Сохранить</Button>
                     </Group>
                 </Stack>
