@@ -17,7 +17,7 @@ const getProductsByCategory = async (req, res) => {
 const getAllCategory = async (req, res) => {
     try {
         const categories = await Category.findAll({
-            attributes: ['id', 'name'], // Получаем только id и name (если нужно)
+            attributes: ['id', 'name', 'icon'], // Получаем только нужные поля
             order: [['createdAt', 'DESC']], // Сортировка по дате создания
         });
 
@@ -63,6 +63,7 @@ const getCategoryAdminSummary = async (req, res) => {
         const result = categories.map((category) => ({
             id: category.id,
             name: category.name,
+            icon: category.icon,
             productCount: category.products.length,
             subcategoryCount: category.subcategories.length,
             unassignedProductCount: category.products.filter((product) => !product.subcategoryId).length,
@@ -107,7 +108,7 @@ const getSubcategoriesByCategory = async (req, res) => {
                 as: 'subcategories',
                 attributes: ['id', 'name'], // Только id и name для подкатегорий
             },
-            attributes: ['id', 'name'], // Только id и name для категории
+            attributes: ['id', 'name', 'icon'], // Только нужные поля для категории
         });
 
         if (!category) {
@@ -185,7 +186,7 @@ const deleteSubcategory = async (req, res) => {
 
 const updateCategory = async (req, res) => {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, icon } = req.body;
 
     if (!name || !name.trim()) {
         return res.status(400).json({ message: 'Название категории обязательно.' });
@@ -198,6 +199,7 @@ const updateCategory = async (req, res) => {
         }
 
         category.name = name.trim();
+        category.icon = typeof icon === 'string' && icon.trim() ? icon.trim() : null;
         await category.save();
 
         res.json(category);

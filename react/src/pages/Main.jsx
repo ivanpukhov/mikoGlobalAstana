@@ -11,16 +11,13 @@ import {
 } from '@mantine/core';
 import api from '../api/api';
 import { MainTop } from '../components/MainTop/MainTop';
-import { OrderGiftPromo } from '../components/OrderGiftPromo/OrderGiftPromo';
 import { SectionHeader } from '../components/SectionHeader/SectionHeader';
 import { ProductGrid } from '../components/ProductGrid/ProductGrid';
 
 export const Main = () => {
     const [categories, setCategories] = useState([]);
     const [productsByCategory, setProductsByCategory] = useState({});
-    const [orderGiftRules, setOrderGiftRules] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
-    const [loadingGiftRules, setLoadingGiftRules] = useState(true);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [city] = useState(() => {
         try {
@@ -35,13 +32,6 @@ export const Main = () => {
             .then(({ data }) => setCategories(Array.isArray(data) ? data : []))
             .catch((error) => console.error('Ошибка категорий:', error))
             .finally(() => setLoadingCategories(false));
-    }, []);
-
-    useEffect(() => {
-        api.get('/order-gift-rules')
-            .then(({ data }) => setOrderGiftRules(Array.isArray(data) ? data : []))
-            .catch((error) => console.error('Ошибка правил подарков:', error))
-            .finally(() => setLoadingGiftRules(false));
     }, []);
 
     useEffect(() => {
@@ -80,8 +70,6 @@ export const Main = () => {
     return (
         <Container size="xl" py={{ base: 'sm', md: 'md' }} px={0}>
             <MainTop categories={categories} loading={loadingCategories} />
-
-            <OrderGiftPromo rules={orderGiftRules} loading={loadingGiftRules} />
 
             <Box
                 mt="xl"

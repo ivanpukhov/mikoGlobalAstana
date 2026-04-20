@@ -5,6 +5,7 @@ import {
     Card,
     Group,
     Modal,
+    ScrollArea,
     Select,
     SimpleGrid,
     Stack,
@@ -13,16 +14,19 @@ import {
     Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconCategory, IconEdit, IconSearch, IconTrash } from '@tabler/icons-react';
 import api from '../api/api';
+import { findTablerIcon, TABLER_ICON_OPTIONS } from '../utils/tablerIcons';
 
 const CategoryManagementPage = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [categoryEdit, setCategoryEdit] = useState({ open: false, id: null, name: '' });
+    const [categoryEdit, setCategoryEdit] = useState({ open: false, id: null, name: '', icon: '' });
     const [categoryDelete, setCategoryDelete] = useState({ open: false, id: null, targetCategoryId: null });
     const [subcategoryEdit, setSubcategoryEdit] = useState({ open: false, id: null, name: '' });
     const [subcategoryDelete, setSubcategoryDelete] = useState({ open: false, id: null, categoryId: null, targetSubcategoryId: null });
+    const [iconPickerOpen, setIconPickerOpen] = useState(false);
+    const [iconSearch, setIconSearch] = useState('');
 
     const fetchSummary = async () => {
         setLoading(true);
@@ -57,9 +61,12 @@ const CategoryManagementPage = () => {
 
     const saveCategory = async () => {
         try {
-            await api.patch(`/categories/${categoryEdit.id}`, { name: categoryEdit.name });
+            await api.patch(`/categories/${categoryEdit.id}`, {
+                name: categoryEdit.name,
+                icon: categoryEdit.icon || null,
+            });
             notifications.show({ color: 'teal', message: 'Категория обновлена.' });
-            setCategoryEdit({ open: false, id: null, name: '' });
+            setCategoryEdit({ open: false, id: null, name: '', icon: '' });
             fetchSummary();
         } catch (error) {
             notifications.show({ color: 'red', message: error.response?.data?.message || 'Ошибка обновления категории.' });
@@ -103,6 +110,18 @@ const CategoryManagementPage = () => {
         }
     };
 
+    const filteredIcons = useMemo(() => {
+        const query = iconSearch.trim().toLowerCase();
+
+        if (!query) {
+            return TABLER_ICON_OPTIONS;
+        }
+
+        return TABLER_ICON_OPTIONS.filter(([name]) => name.toLowerCase().includes(query));
+    }, [iconSearch]);
+
+    const SelectedCategoryIcon = findTablerIcon(categoryEdit.icon);
+
     return (
         <Stack gap="md">
             <Group justify="space-between">
@@ -118,7 +137,18 @@ const CategoryManagementPage = () => {
                         <Stack gap="md">
                             <Group justify="space-between" align="flex-start">
                                 <Stack gap={2}>
-                                    <Title order={4}>{category.name}</Title>
+                                    <Group gap="sm" wrap="nowrap">
+                                        {(() => {
+                                            const CategoryIcon = findTablerIcon(category.icon);
+
+                                            return CategoryIcon ? (
+                                            <ActionIcon variant="light" color="miko" radius="xl" size="lg">
+                                                <CategoryIcon size={18} />
+                                            </ActionIcon>
+                                            ) : null;
+                                        })()}
+                                        <Title order={4}>{category.name}</Title>
+                                    </Group>
                                     <Text size="sm" c="dimmed">
                                         Товаров: {category.productCount}. Подкатегорий: {category.subcategoryCount}. Без подкатегории: {category.unassignedProductCount}
                                     </Text>
@@ -128,7 +158,12 @@ const CategoryManagementPage = () => {
                                         variant="light"
                                         color="miko"
                                         radius="md"
-                                        onClick={() => setCategoryEdit({ open: true, id: category.id, name: category.name })}
+                                        onClick={() => setCategoryEdit({
+                                            open: true,
+                                            id: category.id,
+                                            name: category.name,
+                                            icon: category.icon || '',
+                                        })}
                                     >
                                         <IconEdit size={16} />
                                     </ActionIcon>
@@ -201,7 +236,7 @@ const CategoryManagementPage = () => {
 
             <Modal
                 opened={categoryEdit.open}
-                onClose={() => setCategoryEdit({ open: false, id: null, name: '' })}
+                onClose={() => setCategoryEdit({ open: false, id: null, name: '', icon: '' })}
                 title="Изменить категорию"
                 centered
                 radius="lg"
@@ -213,8 +248,40 @@ const CategoryManagementPage = () => {
                         onChange={(event) => setCategoryEdit((prev) => ({ ...prev, name: event.currentTarget.value }))}
                         radius="md"
                     />
+                    <Stack gap="xs">
+                        <Text size="sm" fw={500}>Иконка категории</Text>
+                        <Group gap="sm" wrap="nowrap">
+                            <ActionIcon variant="light" color="miko" radius="xl" size="xl">
+                                {SelectedCategoryIcon ? (
+                                    <SelectedCategoryIcon size={20} />
+                                ) : (
+                                    <IconCategory size={18} />
+                                )}
+                            </ActionIcon>
+                            <Button
+                                variant="light"
+                                color="miko"
+                                radius="md"
+                                onClick={() => setIconPickerOpen(true)}
+                            >
+                                Выбрать иконку
+                            </Button>
+                            {categoryEdit.icon ? (
+                                <Button
+                                    variant="default"
+                                    radius="md"
+                                    onClick={() => setCategoryEdit((prev) => ({ ...prev, icon: '' }))}
+                                >
+                                    Сбросить
+                                </Button>
+                            ) : null}
+                        </Group>
+                        <Text size="xs" c="dimmed">
+                            В каталоге будет отображаться выбранная иконка. Если не выбрать, останется автоопределение по названию.
+                        </Text>
+                    </Stack>
                     <Group justify="flex-end">
-                        <Button variant="default" radius="md" onClick={() => setCategoryEdit({ open: false, id: null, name: '' })}>Отмена</Button>
+                        <Button variant="default" radius="md" onClick={() => setCategoryEdit({ open: false, id: null, name: '', icon: '' })}>Отмена</Button>
                         <Button color="miko" radius="md" onClick={saveCategory}>Сохранить</Button>
                     </Group>
                 </Stack>
@@ -284,6 +351,61 @@ const CategoryManagementPage = () => {
                         <Button variant="default" radius="md" onClick={() => setSubcategoryDelete({ open: false, id: null, categoryId: null, targetSubcategoryId: null })}>Отмена</Button>
                         <Button color="red" radius="md" onClick={removeSubcategory}>Удалить</Button>
                     </Group>
+                </Stack>
+            </Modal>
+
+            <Modal
+                opened={iconPickerOpen}
+                onClose={() => {
+                    setIconPickerOpen(false);
+                    setIconSearch('');
+                }}
+                title="Выберите иконку категории"
+                centered
+                radius="lg"
+                size="xl"
+            >
+                <Stack gap="md">
+                    <TextInput
+                        placeholder="Поиск по названию иконки, например IconHome"
+                        value={iconSearch}
+                        onChange={(event) => setIconSearch(event.currentTarget.value)}
+                        leftSection={<IconSearch size={16} />}
+                        radius="md"
+                    />
+
+                    <ScrollArea h={420}>
+                        {filteredIcons.length === 0 ? (
+                            <Text c="dimmed" ta="center" py="xl">
+                                По вашему запросу иконки не найдены.
+                            </Text>
+                        ) : (
+                            <SimpleGrid cols={{ base: 3, xs: 4, sm: 5, md: 6, lg: 7 }} spacing="sm">
+                                {filteredIcons.map(([iconName, Icon]) => (
+                                    <Button
+                                        key={iconName}
+                                        variant={categoryEdit.icon === iconName ? 'filled' : 'light'}
+                                        color="miko"
+                                        radius="lg"
+                                        h={86}
+                                        p="xs"
+                                        onClick={() => {
+                                            setCategoryEdit((prev) => ({ ...prev, icon: iconName }));
+                                            setIconPickerOpen(false);
+                                            setIconSearch('');
+                                        }}
+                                    >
+                                        <Stack gap={6} align="center">
+                                            <Icon size={22} />
+                                            <Text size="xs" ta="center" lineClamp={2}>
+                                                {iconName}
+                                            </Text>
+                                        </Stack>
+                                    </Button>
+                                ))}
+                            </SimpleGrid>
+                        )}
+                    </ScrollArea>
                 </Stack>
             </Modal>
         </Stack>

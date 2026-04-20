@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { DataTypes } = require('sequelize');
 const app = express();
 const cityRoutes = require('./routes/cityRoutes');
 const productRoutes = require('./routes/productRoutes');
@@ -33,10 +34,23 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/order-gift-rules', orderGiftRuleRoutes);
 app.use('/api/banners', bannerRoutes);
+
+const ensureCategoryIconColumn = async () => {
+    const queryInterface = sequelize.getQueryInterface();
+    const tableDescription = await queryInterface.describeTable('Categories');
+
+    if (!tableDescription.icon) {
+        await queryInterface.addColumn('Categories', 'icon', {
+            type: DataTypes.STRING,
+            allowNull: true,
+        });
+    }
+};
 // Синхронизация базы данных и индексация
 (async () => {
     try {
         await sequelize.sync();
+        await ensureCategoryIconColumn();
         await seedDefaultOrderGiftRules();
         console.log('База данных синхронизирована.');
         await indexProducts();

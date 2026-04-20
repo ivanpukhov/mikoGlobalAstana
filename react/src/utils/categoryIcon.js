@@ -26,6 +26,7 @@ import {
     IconWash,
     IconWeight,
 } from '@tabler/icons-react';
+import { findTablerIcon } from './tablerIcons';
 
 const MAP = {
     'продукты': IconApple,
@@ -101,7 +102,13 @@ const MAP = {
     'постель': IconBed,
 };
 
-export function getCategoryIcon(name = '') {
+export function getCategoryIcon(name = '', iconName = '') {
+    const savedIcon = findTablerIcon(iconName);
+
+    if (savedIcon) {
+        return savedIcon;
+    }
+
     const lower = name.toLowerCase();
 
     if (MAP[lower]) {

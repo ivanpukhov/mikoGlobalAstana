@@ -3,8 +3,8 @@ import { Box, Stack, Text } from '@mantine/core';
 import { getCategoryIcon } from '../../utils/categoryIcon';
 import classes from './CategoryTile.module.css';
 
-export const CategoryTile = ({ to, name }) => {
-    const Icon = getCategoryIcon(name);
+export const CategoryTile = ({ to, name, icon }) => {
+    const Icon = getCategoryIcon(name, icon);
 
     return (
         <Link to={to} className={classes.tile}>

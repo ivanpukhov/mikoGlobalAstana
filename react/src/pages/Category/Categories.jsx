@@ -42,6 +42,7 @@ export const Categories = () => {
                             key={category.id}
                             to={`/catalog/${category.id}`}
                             name={category.name}
+                            icon={category.icon}
                         />
                     ))}
                 </SimpleGrid>

@@ -80,6 +80,7 @@ export const MainTop = ({ categories = [], loading = false }) => {
                                                   key={category.id}
                                                   to={`/catalog/${category.id}`}
                                                   name={category.name}
+                                                  icon={category.icon}
                                               />
                                           )
                                       )}
