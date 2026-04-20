@@ -5,13 +5,13 @@
 .shell {
     position: relative;
     overflow: hidden;
-    padding: clamp(1rem, 2vw, 2rem);
-    border-radius: 2rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1.5rem;
     background:
         radial-gradient(circle at top left, rgba(255, 255, 255, 0.38), transparent 32%),
         radial-gradient(circle at right bottom, rgba(255, 255, 255, 0.22), transparent 28%),
         linear-gradient(135deg, #ff6a52 0%, #ff8a45 46%, #ffd77e 100%);
-    box-shadow: 0 20px 56px rgba(209, 92, 52, 0.22);
+    box-shadow: 0 16px 36px rgba(209, 92, 52, 0.18);
 }
 
 .shell::before {
@@ -28,15 +28,14 @@
 
 .title {
     color: #ffffff;
-    font-size: clamp(1.6rem, 3vw, 2.4rem);
-    line-height: 1.05;
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    line-height: 1.15;
 }
 
 .description {
-    max-width: 38rem;
     color: rgba(255, 255, 255, 0.92);
-    font-size: 1rem;
-    line-height: 1.55;
+    font-size: 0.92rem;
+    line-height: 1.4;
 }
 
 .cta {
@@ -44,29 +43,20 @@
 }
 
 .rulesPanel {
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    border-radius: 1.75rem;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 12px 34px rgba(134, 72, 44, 0.12);
+    padding: 0.85rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .ruleRow {
-    padding: 1.15rem 1.2rem;
-}
-
-.ruleRow + .ruleRow {
-    border-top: 1px solid rgba(214, 74, 56, 0.12);
+    min-height: 0;
 }
 
 .skeletonRow {
-    height: 6.75rem;
-    background: rgba(255, 255, 255, 0.16);
-}
-
-.skeletonRow + .skeletonRow {
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    height: 1.25rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
 }
 
 .ruleBullet {
@@ -86,59 +76,37 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 1.65rem;
+    height: 1.65rem;
     border-radius: 999px;
     color: #d64a38;
-    font-size: 1rem;
+    font-size: 0.82rem;
     font-weight: 800;
-    background: rgba(255, 121, 86, 0.12);
+    background: rgba(255, 255, 255, 0.72);
 }
 
 .threshold {
-    color: #d64a38;
-    font-size: 0.95rem;
+    color: #ffffff;
+    font-size: 0.9rem;
     font-weight: 800;
     line-height: 1.4;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
 }
 
-.productName {
-    color: #1f2328;
-    font-size: 1rem;
-    font-weight: 700;
+.ruleText {
+    color: rgba(255, 255, 255, 0.96);
+    font-size: 0.92rem;
+    font-weight: 600;
     line-height: 1.45;
-}
-
-.note {
-    color: #646b77;
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.footerNote {
-    padding: 1rem 1.1rem;
-    border-radius: 1.25rem;
-    background: rgba(255, 255, 255, 0.14);
-}
-
-.footerText {
-    color: rgba(255, 255, 255, 0.94);
-    font-size: 0.95rem;
-    line-height: 1.55;
 }
 
 @media (max-width: 48em) {
     .shell {
-        border-radius: 1.5rem;
-    }
-
-    .rulesPanel {
+        padding: 0.9rem 1rem;
         border-radius: 1.25rem;
     }
 
-    .ruleRow {
-        padding: 1rem 0.95rem;
+    .rulesPanel {
+        padding: 0.8rem 0.85rem;
+        border-radius: 0.9rem;
     }
 }

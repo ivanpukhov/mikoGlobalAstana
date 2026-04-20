@@ -69,15 +69,15 @@ export const OrderGiftPromo = ({ rules = [], loading = false }) => {
     return (
         <Box className={classes.section}>
             <Box className={classes.shell}>
-                <Stack gap="xl">
-                    <Group justify="space-between" align="flex-start" gap="lg" wrap="wrap">
-                        <Stack gap="sm" maw={620}>
+                <Stack gap="md">
+                    <Group justify="space-between" align="center" gap="md" wrap="wrap">
+                        <Stack gap={6} maw={720}>
                             <Group gap="sm">
                                 <Badge
                                     variant="white"
                                     color="red"
                                     radius="xl"
-                                    size="lg"
+                                    size="sm"
                                     leftSection={<IconSparkles size={14} />}
                                 >
                                     Акция
@@ -86,20 +86,19 @@ export const OrderGiftPromo = ({ rules = [], loading = false }) => {
                                     variant="light"
                                     color="miko"
                                     radius="xl"
-                                    size="lg"
+                                    size="sm"
                                     leftSection={<IconGift size={14} />}
                                 >
                                     Подарки к заказу
                                 </Badge>
                             </Group>
 
-                            <Title order={2} className={classes.title}>
-                                Выбирайте товары и получайте подарок за сумму заказа
+                            <Title order={3} className={classes.title}>
+                                Подарки за сумму заказа
                             </Title>
 
                             <Text className={classes.description}>
-                                На главной сразу видно, какой подарок вы получите на каждом пороге.
-                                Чем больше заказ, тем приятнее бонус.
+                                Чем больше заказ, тем приятнее подарок. Все условия видны сразу.
                             </Text>
                         </Stack>
 
@@ -108,17 +107,17 @@ export const OrderGiftPromo = ({ rules = [], loading = false }) => {
                             to="/categories"
                             variant="white"
                             color="dark"
-                            radius="xl"
-                            size="md"
+                            radius="md"
+                            size="sm"
                             rightSection={<IconArrowRight size={16} />}
                             className={classes.cta}
                         >
-                            Собрать заказ
+                            В каталог
                         </Button>
                     </Group>
 
                     <Box className={classes.rulesPanel}>
-                        <Stack gap={0}>
+                        <Stack gap={6}>
                             {loading
                                 ? Array.from({ length: 4 }).map((_, index) => (
                                       <Box
@@ -131,38 +130,21 @@ export const OrderGiftPromo = ({ rules = [], loading = false }) => {
                                           key={rule.id}
                                           className={classes.ruleRow}
                                       >
-                                          <Group gap="md" wrap="nowrap" align="flex-start">
+                                          <Group gap="sm" wrap="nowrap" align="flex-start">
                                               <Box className={classes.ruleIndex}>
                                                   {index + 1}
                                               </Box>
 
-                                              <Stack gap={4}>
-                                                  <Text className={classes.threshold}>
+                                              <Text className={classes.ruleText}>
+                                                  <Text span className={classes.threshold}>
                                                       {formatThreshold(rule)}
                                                   </Text>
-                                                  <Text className={classes.productName}>
-                                                      {rule.product.name} в подарок
-                                                  </Text>
-                                                  <Text className={classes.note}>
-                                                      {formatRangeNote(rule)}
-                                                  </Text>
-                                              </Stack>
+                                                  {' '}— {rule.product.name} в подарок
+                                              </Text>
                                           </Group>
                                       </Box>
                                   ))}
                         </Stack>
-                    </Box>
-
-                    <Box className={classes.footerNote}>
-                        <Group gap="sm" wrap="nowrap" align="center">
-                            <Box className={classes.ruleBullet}>
-                                <IconGift size={18} />
-                            </Box>
-                            <Text className={classes.footerText}>
-                                Подарок добавляется автоматически при оформлении заказа,
-                                если сумма попадает под условия акции.
-                            </Text>
-                        </Group>
                     </Box>
                 </Stack>
             </Box>
