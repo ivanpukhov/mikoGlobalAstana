@@ -4,7 +4,6 @@ import {
     Box,
     Button,
     Group,
-    SimpleGrid,
     Stack,
     Text,
     Title,
@@ -118,32 +117,53 @@ export const OrderGiftPromo = ({ rules = [], loading = false }) => {
                         </Button>
                     </Group>
 
-                    <SimpleGrid cols={{ base: 1, xs: 2, lg: 4 }} spacing="md">
-                        {loading
-                            ? Array.from({ length: 4 }).map((_, index) => (
-                                  <Box key={index} className={classes.skeletonRow} />
-                              ))
-                            : items.map((rule) => (
-                                  <Box key={rule.id} className={classes.ruleRow}>
-                                      <Stack gap={8}>
-                                          <Group gap="sm" wrap="nowrap" align="flex-start">
-                                              <Box className={classes.ruleBullet}>
-                                                  <IconGift size={18} />
+                    <Box className={classes.rulesPanel}>
+                        <Stack gap={0}>
+                            {loading
+                                ? Array.from({ length: 4 }).map((_, index) => (
+                                      <Box
+                                          key={index}
+                                          className={classes.skeletonRow}
+                                      />
+                                  ))
+                                : items.map((rule, index) => (
+                                      <Box
+                                          key={rule.id}
+                                          className={classes.ruleRow}
+                                      >
+                                          <Group gap="md" wrap="nowrap" align="flex-start">
+                                              <Box className={classes.ruleIndex}>
+                                                  {index + 1}
                                               </Box>
+
                                               <Stack gap={4}>
-                                                  <Text className={classes.threshold}>{formatThreshold(rule)}</Text>
+                                                  <Text className={classes.threshold}>
+                                                      {formatThreshold(rule)}
+                                                  </Text>
                                                   <Text className={classes.productName}>
-                                                      В подарок: {rule.product.name}
+                                                      {rule.product.name} в подарок
                                                   </Text>
                                                   <Text className={classes.note}>
                                                       {formatRangeNote(rule)}
                                                   </Text>
                                               </Stack>
                                           </Group>
-                                      </Stack>
-                                  </Box>
-                              ))}
-                    </SimpleGrid>
+                                      </Box>
+                                  ))}
+                        </Stack>
+                    </Box>
+
+                    <Box className={classes.footerNote}>
+                        <Group gap="sm" wrap="nowrap" align="center">
+                            <Box className={classes.ruleBullet}>
+                                <IconGift size={18} />
+                            </Box>
+                            <Text className={classes.footerText}>
+                                Подарок добавляется автоматически при оформлении заказа,
+                                если сумма попадает под условия акции.
+                            </Text>
+                        </Group>
+                    </Box>
                 </Stack>
             </Box>
         </Box>
