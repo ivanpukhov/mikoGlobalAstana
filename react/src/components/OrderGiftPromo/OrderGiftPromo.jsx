@@ -3,18 +3,14 @@ import {
     Badge,
     Box,
     Button,
-    Card,
     Group,
-    Image,
     SimpleGrid,
     Stack,
     Text,
-    ThemeIcon,
     Title,
 } from '@mantine/core';
 import { IconArrowRight, IconGift, IconSparkles } from '@tabler/icons-react';
 import { formatCurrency } from '../../utils/formatters';
-import { resolveImage } from '../../utils/resolveImage';
 import classes from './OrderGiftPromo.module.css';
 
 const formatThreshold = (rule) => {
@@ -125,40 +121,27 @@ export const OrderGiftPromo = ({ rules = [], loading = false }) => {
                     <SimpleGrid cols={{ base: 1, xs: 2, lg: 4 }} spacing="md">
                         {loading
                             ? Array.from({ length: 4 }).map((_, index) => (
-                                  <Card key={index} className={classes.skeletonCard} radius="xl" />
+                                  <Box key={index} className={classes.skeletonRow} />
                               ))
                             : items.map((rule) => (
-                                  <Card key={rule.id} className={classes.card} radius="xl" padding="lg">
-                                      <Stack gap="md" h="100%">
-                                          <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
-                                              <Badge color="red" variant="light" radius="xl" size="lg">
-                                                  {rule.minAmount > 0 ? `от ${formatCurrency(rule.minAmount)}` : 'всегда'}
-                                              </Badge>
-                                              <ThemeIcon radius="xl" variant="light" color="miko" size={42}>
-                                                  <IconGift size={20} />
-                                              </ThemeIcon>
+                                  <Box key={rule.id} className={classes.ruleRow}>
+                                      <Stack gap={8}>
+                                          <Group gap="sm" wrap="nowrap" align="flex-start">
+                                              <Box className={classes.ruleBullet}>
+                                                  <IconGift size={18} />
+                                              </Box>
+                                              <Stack gap={4}>
+                                                  <Text className={classes.threshold}>{formatThreshold(rule)}</Text>
+                                                  <Text className={classes.productName}>
+                                                      В подарок: {rule.product.name}
+                                                  </Text>
+                                                  <Text className={classes.note}>
+                                                      {formatRangeNote(rule)}
+                                                  </Text>
+                                              </Stack>
                                           </Group>
-
-                                          <Box className={classes.imageWrap}>
-                                              <Image
-                                                  src={resolveImage(rule.product.image)}
-                                                  alt={rule.product.name}
-                                                  fit="contain"
-                                                  className={classes.image}
-                                              />
-                                          </Box>
-
-                                          <Stack gap={6} mt="auto">
-                                              <Text className={classes.threshold}>{formatThreshold(rule)}</Text>
-                                              <Text className={classes.productName} lineClamp={3}>
-                                                  {rule.product.name}
-                                              </Text>
-                                              <Text className={classes.note}>
-                                                  {formatRangeNote(rule)}
-                                              </Text>
-                                          </Stack>
                                       </Stack>
-                                  </Card>
+                                  </Box>
                               ))}
                     </SimpleGrid>
                 </Stack>
