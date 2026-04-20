@@ -1,94 +1,95 @@
-import React, { useState, useEffect } from "react";
-import { Form, Input, Button, Select, Typography, message } from "antd";
-import { useNavigate } from "react-router-dom";
-import api from "../api/api";
-
-const { Title } = Typography;
-const { Option } = Select;
+import { useEffect, useState } from 'react';
+import {
+    Button,
+    Card,
+    Select,
+    Stack,
+    TextInput,
+    Title,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { useNavigate } from 'react-router-dom';
+import api from '../api/api';
 
 const UserCreatePage = () => {
     const [loading, setLoading] = useState(false);
     const [cities, setCities] = useState([]);
     const navigate = useNavigate();
 
-    const fetchCities = async () => {
-        try {
-            const { data } = await api.get("/cities");
-            setCities(data);
-        } catch (error) {
-            console.error("Ошибка загрузки городов:", error);
-            message.error("Не удалось загрузить список городов.");
-        }
-    };
+    const form = useForm({
+        initialValues: { name: '', phoneNumber: '', cityId: '' },
+        validate: {
+            name: (v) => (v.trim() ? null : 'Введите имя пользователя.'),
+            phoneNumber: (v) =>
+                /^\+?\d{10,15}$/.test(v.trim()) ? null : 'Введите корректный номер телефона.',
+            cityId: (v) => (v ? null : 'Выберите город.'),
+        },
+    });
 
     useEffect(() => {
-        fetchCities();
+        api.get('/cities')
+            .then(({ data }) => setCities(data))
+            .catch(() => notifications.show({ color: 'red', message: 'Не удалось загрузить список городов.' }));
     }, []);
 
     const handleSubmit = async (values) => {
+        setLoading(true);
         try {
-            setLoading(true);
-
             const payload = {
                 ...values,
-                cityId: values.cityId === "all" ? null : values.cityId
+                cityId: values.cityId === 'all' ? null : values.cityId,
             };
-
-            await api.post("/users/create", payload);
-            message.success("Пользователь успешно добавлен.");
-            navigate("/admin/users");
+            await api.post('/users/create', payload);
+            notifications.show({ color: 'teal', message: 'Пользователь успешно добавлен.' });
+            navigate('/admin/users');
         } catch (error) {
-            console.error("Ошибка добавления пользователя:", error);
-            message.error(error.response?.data?.message || "Не удалось добавить пользователя.");
+            notifications.show({
+                color: 'red',
+                message: error.response?.data?.message || 'Не удалось добавить пользователя.',
+            });
         } finally {
             setLoading(false);
         }
     };
 
+    const cityOptions = [
+        { value: 'all', label: 'Все города' },
+        ...cities.map((c) => ({ value: String(c.id), label: c.name })),
+    ];
+
     return (
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-            <Title level={3}>Добавить нового пользователя</Title>
-            <Form layout="vertical" onFinish={handleSubmit}>
-                <Form.Item
-                    label="Имя"
-                    name="name"
-                    rules={[{ required: true, message: "Введите имя пользователя." }]}
-                >
-                    <Input />
-                </Form.Item>
-                <Form.Item
-                    label="Номер телефона"
-                    name="phoneNumber"
-                    rules={[
-                        { required: true, message: "Введите номер телефона." },
-                        { pattern: /^\+?\d{10,15}$/, message: "Введите корректный номер телефона." },
-                    ]}
-                >
-                    <Input />
-                </Form.Item>
-                <Form.Item
-                    label="Город"
-                    name="cityId"
-                    rules={[{ required: true, message: "Выберите город." }]}
-                >
-                    <Select placeholder="Выберите город">
-                        <Option key="all" value="all">
-                            Все города
-                        </Option>
-                        {cities.map((city) => (
-                            <Option key={city.id} value={city.id}>
-                                {city.name}
-                            </Option>
-                        ))}
-                    </Select>
-                </Form.Item>
-                <Form.Item>
-                    <Button type="primary" htmlType="submit" loading={loading}>
-                        Добавить
-                    </Button>
-                </Form.Item>
-            </Form>
-        </div>
+        <Card radius="xl" shadow="sm" p="xl" maw={600} mx="auto">
+            <Stack gap="lg">
+                <Title order={3} fw={700}>Добавить нового пользователя</Title>
+                <form onSubmit={form.onSubmit(handleSubmit)}>
+                    <Stack gap="md">
+                        <TextInput
+                            label="Имя"
+                            placeholder="Иван"
+                            {...form.getInputProps('name')}
+                            radius="md"
+                        />
+                        <TextInput
+                            label="Номер телефона"
+                            placeholder="+77012345678"
+                            {...form.getInputProps('phoneNumber')}
+                            radius="md"
+                        />
+                        <Select
+                            label="Город"
+                            placeholder="Выберите город"
+                            data={cityOptions}
+                            {...form.getInputProps('cityId')}
+                            radius="md"
+                        />
+                        <Button type="submit" color="miko" radius="md" loading={loading}>
+                            Добавить
+                        </Button>
+                    </Stack>
+                </form>
+            </Stack>
+        </Card>
     );
 };
 

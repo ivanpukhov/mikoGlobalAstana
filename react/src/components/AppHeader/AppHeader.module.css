@@ -1,0 +1,93 @@
+.root {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background:
+        linear-gradient(135deg, rgba(5, 92, 84, 0.96) 0%, rgba(10, 164, 149, 0.96) 52%, rgba(12, 227, 203, 0.96) 100%);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 2px 18px rgba(10, 35, 41, 0.14);
+}
+
+.inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 76px;
+}
+
+.logo {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    filter: brightness(0) invert(1);
+}
+
+.catalogBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: var(--mantine-radius-md);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.15s ease, transform 0.15s ease;
+    white-space: nowrap;
+}
+
+.catalogBtn:hover {
+    background: rgba(255, 255, 255, 0.28);
+    transform: translateY(-1px);
+}
+
+.search {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.search :global(.mantine-Input-input) {
+    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.actions {
+    flex-shrink: 0;
+}
+
+.cityBtn {
+    padding: 6px 10px;
+    border-radius: var(--mantine-radius-md);
+    transition: background 0.15s ease;
+    max-width: 180px;
+    color: #ffffff;
+}
+
+.cityBtn:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 62em) {
+    .catalogBtn {
+        display: none;
+    }
+
+    .cityBtn {
+        max-width: 132px;
+    }
+}
+
+@media (max-width: 48em) {
+    .inner {
+        height: 62px;
+        gap: 10px;
+    }
+
+    .logo img {
+        height: 30px;
+    }
+
+    .cityBtn {
+        display: none;
+    }
+}

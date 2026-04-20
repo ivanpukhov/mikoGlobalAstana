@@ -1,44 +1,66 @@
-import {NavLink} from "react-router-dom";
-import homeActive from "../../images/bar/home__active.svg";
-import homeBtn from "../../images/bar/home.svg";
-import catalogActive from "../../images/bar/catalog__active.svg";
-import catalogBtn from "../../images/bar/catalog.svg";
-import favoriteActive from "../../images/bar/favorite__active.svg";
-import favoriteBtn from "../../images/bar/favorite.svg";
-import shopActive from "../../images/bar/shop__active.svg";
-import shopBtn from "../../images/bar/shop.svg";
-import React from "react";
-import './Bar.scss'
+import { Box, rem, Text, UnstyledButton } from '@mantine/core';
+import {
+    IconHome2,
+    IconLayoutGrid,
+    IconShoppingCart,
+} from '@tabler/icons-react';
+import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import styles from './Bar.module.scss';
 
-const BarMobile = () => {
-    return(
-        <div className="barMobile dn">
-            <div className="barMobile__item">
-                <NavLink to="/">
-                    {({isActive}) => (<img src={isActive ? homeActive : homeBtn} alt="Home"/>)}
-                </NavLink>
-            </div>
-            <div className="barMobile__item">
-                <NavLink to="/categories">
-                    {({isActive}) => (<img src={isActive ? catalogActive : catalogBtn} alt="Home"/>)}
-                </NavLink>
-            </div>
-            <div className="barMobile__item">
-                <NavLink to="/favorite">
-                    {({isActive}) => (<img src={isActive ? favoriteActive : favoriteBtn} alt="Home"/>)}
-                </NavLink>
-            </div>
-            <div className="barMobile__item">
-                <NavLink to="/cart">
-                    {({isActive}) => (<img src={isActive ? shopActive : shopBtn} alt="Home"/>)}
-                </NavLink>
-            </div>
-
-
-        </div>
-
-
-    )
+function getCartCount() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '{}');
+    return Object.values(cart).reduce((sum, item) => sum + (item?.quantity || 0), 0);
 }
 
-export default BarMobile
+const NAV_ITEMS = [
+    { to: '/', icon: IconHome2, label: 'Главная', exact: true },
+    { to: '/categories', icon: IconLayoutGrid, label: 'Каталог', exact: false },
+    { to: '/cart', icon: IconShoppingCart, label: 'Корзина', exact: false },
+];
+
+const BarMobile = () => {
+    const [cartCount, setCartCount] = useState(getCartCount);
+
+    useEffect(() => {
+        const refresh = () => setCartCount(getCartCount());
+        window.addEventListener('focus', refresh);
+        window.addEventListener('storage', refresh);
+        return () => {
+            window.removeEventListener('focus', refresh);
+            window.removeEventListener('storage', refresh);
+        };
+    }, []);
+
+    return (
+        <nav className={styles.bar}>
+            {NAV_ITEMS.map(({ to, icon: Icon, label, exact }) => (
+                <NavLink
+                    key={to}
+                    to={to}
+                    end={exact}
+                    className={({ isActive }) =>
+                        `${styles.bar__item} ${isActive ? styles['bar__item--active'] : ''}`
+                    }
+                >
+                    <Box pos="relative" display="inline-flex">
+                        <Icon size={24} />
+                        {label === 'Корзина' && cartCount > 0 && (
+                            <Box
+                                className={styles.badge}
+                                pos="absolute"
+                                top={-6}
+                                right={-8}
+                            >
+                                {cartCount > 9 ? '9+' : cartCount}
+                            </Box>
+                        )}
+                    </Box>
+                    <Text size="xs" mt={2}>{label}</Text>
+                </NavLink>
+            ))}
+        </nav>
+    );
+};
+
+export default BarMobile;

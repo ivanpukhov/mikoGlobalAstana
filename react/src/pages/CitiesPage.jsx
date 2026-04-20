@@ -1,69 +1,101 @@
-import React, { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Input } from "antd";
-import api from "../api/api";
+import { useEffect, useState } from 'react';
+import {
+    Button,
+    Group,
+    Modal,
+    Stack,
+    Table,
+    TextInput,
+    Title,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import api from '../api/api';
 
 const CitiesPage = () => {
     const [cities, setCities] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [form] = Form.useForm();
+    const [opened, setOpened] = useState(false);
+
+    const form = useForm({
+        initialValues: { name: '' },
+        validate: { name: (v) => (v.trim() ? null : 'Введите название города') },
+    });
 
     const fetchCities = async () => {
         try {
-            const { data } = await api.get("/cities");
+            const { data } = await api.get('/cities');
             setCities(data);
-        } catch (error) {
-            console.error("Ошибка загрузки городов:", error);
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка загрузки городов' });
         }
     };
 
-    const handleAddCity = async (values) => {
+    const handleAdd = async (values) => {
         try {
-            await api.post("/cities", values);
+            await api.post('/cities', values);
             fetchCities();
-            setIsModalOpen(false);
-            form.resetFields();
-        } catch (error) {
-            console.error("Ошибка добавления города:", error);
+            setOpened(false);
+            form.reset();
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка добавления города' });
         }
     };
 
-    useEffect(() => {
-        fetchCities();
-    }, []);
-
-    const columns = [
-        { title: "ID", dataIndex: "id", key: "id" },
-        { title: "Название", dataIndex: "name", key: "name" },
-    ];
+    useEffect(() => { fetchCities(); }, []);
 
     return (
-        <>
-            <Button
-                type="primary"
-                onClick={() => setIsModalOpen(true)}
-                style={{ marginBottom: 16 }}
-            >
-                Добавить город
-            </Button>
-            <Table dataSource={cities} columns={columns} rowKey="id" />
+        <Stack gap="md">
+            <Group justify="space-between">
+                <Title order={3} fw={700}>Города</Title>
+                <Button color="miko" radius="md" onClick={() => setOpened(true)}>
+                    Добавить город
+                </Button>
+            </Group>
+
+            <Table striped highlightOnHover withTableBorder radius="md">
+                <Table.Thead>
+                    <Table.Tr>
+                        <Table.Th>ID</Table.Th>
+                        <Table.Th>Название</Table.Th>
+                    </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                    {cities.map((city) => (
+                        <Table.Tr key={city.id}>
+                            <Table.Td>{city.id}</Table.Td>
+                            <Table.Td>{city.name}</Table.Td>
+                        </Table.Tr>
+                    ))}
+                </Table.Tbody>
+            </Table>
 
             <Modal
+                opened={opened}
+                onClose={() => setOpened(false)}
                 title="Добавить город"
-                visible={isModalOpen}
-                onCancel={() => setIsModalOpen(false)}
-                onOk={() => form.submit()}
+                centered
+                radius="lg"
             >
-                <Form form={form} onFinish={handleAddCity}>
-                    <Form.Item
-                        name="name"
-                        label="Название города"
-                        rules={[{ required: true, message: "Введите название города" }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                </Form>
+                <form onSubmit={form.onSubmit(handleAdd)}>
+                    <Stack gap="md">
+                        <TextInput
+                            label="Название города"
+                            placeholder="Астана"
+                            {...form.getInputProps('name')}
+                            radius="md"
+                        />
+                        <Group justify="flex-end">
+                            <Button variant="default" radius="md" onClick={() => setOpened(false)}>
+                                Отмена
+                            </Button>
+                            <Button type="submit" color="miko" radius="md">
+                                Добавить
+                            </Button>
+                        </Group>
+                    </Stack>
+                </form>
             </Modal>
-        </>
+        </Stack>
     );
 };
 

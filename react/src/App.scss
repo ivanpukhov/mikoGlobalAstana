@@ -1,12 +1,9 @@
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
-  font-family: Inter, serif;
 }
 
 html, body {
-  background: #f7f7f7;
+  background: transparent;
 }
 
 .container {
@@ -16,6 +13,27 @@ html, body {
   width: 100%;
   @media (max-width: 1400px) {
     padding: 0 16px;
+  }
+}
+
+.App {
+  min-height: 100vh;
+}
+
+.storeMain {
+  min-height: calc(100vh - 72px);
+}
+
+.storeContainer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 12px 16px 104px;
+}
+
+@media (min-width: 48em) {
+  .storeContainer {
+    padding-top: 16px;
+    padding-bottom: 24px;
   }
 }
 
@@ -326,88 +344,6 @@ a {
   }
 }
 
-.ant-menu-title-content, td>span, th>span {
-  display: block !important; /* Принудительно отображаем текст меню */
-}
-
-.ant-card {
-  word-break: break-word; /* Позволяет тексту переноситься */
-}
-
-.ant-table {
-  overflow-x: auto; /* Добавляем скроллинг для таблиц на мобильных устройствах */
-}
-
-.ant-statistic-title {
-  font-size: 14px; /* Чуть уменьшаем размер текста для мобильных экранов */
-}
-
-/* Общий стиль для адаптивности */
-@media (max-width: 768px) {
-  .ant-card {
-    margin-bottom: 16px; /* Увеличиваем отступы между карточками */
-  }
-
-  .ant-card-head-title {
-    //font-size: 16px; /* Уменьшаем заголовки карточек для мобильных экранов */
-  }
-
-  .ant-select {
-    width: 100% !important; /* Переписываем ширину для select-компонента */
-  }
-
-  .ant-table-thead > tr > th, .ant-table-tbody > tr > td {
-    font-size: 14px; /* Уменьшаем размер текста в таблицах */
-  }
-
-  .ant-row {
-    flex-wrap: wrap; /* Автоматическое перенесение содержимого в строках */
-  }
-
-  .ant-col {
-    width: 100% !important; /* Каждая колонка на 100% ширины */
-  }
-}
-
-div.ant-col-xs-24 span {
-  display: inline-block !important;
-}
-.orders-page-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-.filter-section {
-  margin-bottom: 24px;
-}
-
-.order-card {
-  border-radius: 8px;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.order-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.order-card .ant-btn-primary {
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 4px;
-}
-
-@media (max-width: 768px) {
-  .orders-page-container {
-    padding: 12px;
-  }
-  .filter-section .ant-col {
-    margin-bottom: 12px;
-  }
-}
 
 
 .ads{

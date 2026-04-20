@@ -1,265 +1,274 @@
-import React, {useEffect, useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
-import {Button, Card, Image, InputNumber, message, Modal, Spin, Table, Typography} from "antd";
-import {ArrowLeftOutlined, LoadingOutlined} from "@ant-design/icons";
-import api from "../api/api";
-import { formatCurrency } from "../utils/formatters";
+import { useEffect, useState } from 'react';
+import {
+    Badge,
+    Button,
+    Card,
+    Group,
+    Loader,
+    Modal,
+    NumberInput,
+    Stack,
+    Table,
+    Text,
+    TextInput,
+    Title,
+} from '@mantine/core';
+import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
+import { IconArrowLeft, IconEdit, IconTrash } from '@tabler/icons-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import api from '../api/api';
+import { formatCurrency } from '../utils/formatters';
 
 const ProductDetailsPage = () => {
-    const {id} = useParams();
+    const { id } = useParams();
     const navigate = useNavigate();
     const [product, setProduct] = useState(null);
     const [cities, setCities] = useState([]);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadingCityActions, setLoadingCityActions] = useState({});
-    const [priceModalVisible, setPriceModalVisible] = useState(false);
-    const [discountModalVisible, setDiscountModalVisible] = useState(false);
-    const [selectedCity, setSelectedCity] = useState(null);
-    const [newPrice, setNewPrice] = useState("");
-    const [newDiscount, setNewDiscount] = useState("");
-
-    useEffect(() => {
-        fetchProductDetails();
-        fetchCities();
-    }, [id]);
+    const [priceModal, setPriceModal] = useState({ open: false, cityId: null, value: '' });
+    const [discountModal, setDiscountModal] = useState({ open: false, cityId: null, value: '' });
 
     const fetchProductDetails = async () => {
         try {
-            const {data} = await api.get(`/products/${id}`);
-            setProduct({...data, imageUrl: `/api${data.image}`});
-        } catch (error) {
-            console.error("Ошибка загрузки деталей товара:", error);
+            const { data } = await api.get(`/products/${id}`);
+            setProduct({ ...data, imageUrl: `/api${data.image}` });
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка загрузки товара' });
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchCities = async () => {
-        try {
-            const {data} = await api.get("/cities");
-            setCities(data);
-        } catch (error) {
-            console.error("Ошибка загрузки списка городов:", error);
-        }
-    };
+    useEffect(() => {
+        fetchProductDetails();
+        api.get('/cities').then(({ data }) => setCities(data)).catch(console.error);
+    }, [id]);
 
-    const getCityName = (cityId) => {
-        const city = cities.find((city) => city.id === cityId);
-        return city ? city.name : "Неизвестный город";
-    };
+    const getCityName = (cityId) => cities.find((c) => c.id === cityId)?.name || 'Неизвестный город';
 
-    const handleDelete = async () => {
-        Modal.confirm({
-            title: "Удалить товар?",
-            content: "Это действие нельзя отменить.",
-            okText: "Удалить",
-            okType: "danger",
-            cancelText: "Отмена",
-            onOk: async () => {
-                setIsDeleting(true);
+    const handleDelete = () => {
+        modals.openConfirmModal({
+            title: 'Удалить товар?',
+            children: <Text size="sm">Это действие нельзя отменить.</Text>,
+            labels: { confirm: 'Удалить', cancel: 'Отмена' },
+            confirmProps: { color: 'red' },
+            centered: true,
+            onConfirm: async () => {
                 try {
                     await api.delete(`/products/${id}`);
-                    message.success("Товар удалён!");
+                    notifications.show({ color: 'teal', message: 'Товар удалён!' });
                     navigate(-1);
-                } catch (error) {
-                    console.error("Ошибка удаления:", error);
-                    message.error("Не удалось удалить товар.");
-                } finally {
-                    setIsDeleting(false);
+                } catch {
+                    notifications.show({ color: 'red', message: 'Не удалось удалить товар.' });
                 }
             },
         });
     };
 
     const handleToggleAvailability = async (cityId, availability) => {
-        setLoadingCityActions((prev) => ({...prev, [cityId]: true}));
+        setLoadingCityActions((prev) => ({ ...prev, [cityId]: true }));
         try {
-            await api.patch(`/products/${cityId}/products/${id}/availability`, {availability});
-            message.success(availability ? "Товар доступен" : "Товар снят с продажи");
+            await api.patch(`/products/${cityId}/products/${id}/availability`, { availability });
+            notifications.show({ color: 'teal', message: availability ? 'Товар доступен' : 'Товар снят с продажи' });
             fetchProductDetails();
-        } catch (error) {
-            console.error("Ошибка изменения доступности:", error);
-            message.error("Ошибка обновления");
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка обновления доступности' });
         } finally {
-            setLoadingCityActions((prev) => ({...prev, [cityId]: false}));
+            setLoadingCityActions((prev) => ({ ...prev, [cityId]: false }));
         }
-    };
-
-    const openPriceModal = (cityId, currentPrice) => {
-        setSelectedCity(cityId);
-        setNewPrice(currentPrice);
-        setPriceModalVisible(true);
-    };
-
-    const openDiscountModal = (cityId, currentDiscount) => {
-        setSelectedCity(cityId);
-        setNewDiscount(currentDiscount);
-        setDiscountModalVisible(true);
     };
 
     const handlePriceUpdate = async () => {
-        if (!newPrice || newPrice <= 0) {
-            message.error("Введите корректную цену.");
+        if (!priceModal.value || priceModal.value <= 0) {
+            notifications.show({ color: 'red', message: 'Введите корректную цену.' });
             return;
         }
         try {
-            await api.patch(`/products/${selectedCity}/products/${id}/price`, {price: newPrice});
-            message.success("Цена обновлена!");
+            await api.patch(`/products/${priceModal.cityId}/products/${id}/price`, { price: priceModal.value });
+            notifications.show({ color: 'teal', message: 'Цена обновлена!' });
             fetchProductDetails();
-        } catch (error) {
-            console.error("Ошибка обновления цены:", error);
-            message.error("Ошибка при обновлении цены.");
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка обновления цены.' });
         } finally {
-            setPriceModalVisible(false);
+            setPriceModal({ open: false, cityId: null, value: '' });
         }
     };
 
     const handleDiscountUpdate = async () => {
-        if (newDiscount < 0) {
-            message.error("Введите корректную скидку.");
+        if (discountModal.value < 0) {
+            notifications.show({ color: 'red', message: 'Введите корректную скидку.' });
             return;
         }
         try {
-            await api.patch(`/products/${selectedCity}/products/${id}/discount`, {discount: newDiscount});
-            message.success("Скидка обновлена!");
+            await api.patch(`/products/${discountModal.cityId}/products/${id}/discount`, { discount: discountModal.value });
+            notifications.show({ color: 'teal', message: 'Скидка обновлена!' });
             fetchProductDetails();
-        } catch (error) {
-            console.error("Ошибка обновления скидки:", error);
-            message.error("Ошибка при обновлении скидки.");
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка обновления скидки.' });
         } finally {
-            setDiscountModalVisible(false);
+            setDiscountModal({ open: false, cityId: null, value: '' });
         }
     };
 
-    const columns = [
-        {
-            title: "Город",
-            dataIndex: "cityId",
-            key: "cityId",
-            render: (cityId) => getCityName(cityId),
-        },
-        {
-            title: "Цена (₸)",
-            dataIndex: "price",
-            key: "price",
-            render: (price) => formatCurrency(price),
-        },
-        {
-            title: "Скидка (%)",
-            dataIndex: "discount",
-            key: "discount",
-        },
-        {
-            title: "В наличии",
-            dataIndex: "availability",
-            key: "availability",
-            render: (availability) => (availability ? "Да" : "Нет"),
-        },
-        {
-            title: "Действие",
-            key: "action",
-            render: (_, record) => (
-                <div style={{display: "flex", flexDirection: "column", gap: 10}}>
-
-                    <Button
-                        type={record.availability ? "danger" : "primary"}
-                        loading={loadingCityActions[record.cityId]}
-                        onClick={() => handleToggleAvailability(record.cityId, !record.availability)}
-                    >
-                        {record.availability ? "Снять с продажи" : "Вернуть в продажу"}
-                    </Button>
-                    <Button
-                        type="default"
-                        onClick={() => openPriceModal(record.cityId, record.price)}
-                    >
-                        Изменить цену
-                    </Button>
-                    <Button
-                        type="default"
-                        onClick={() => openDiscountModal(record.cityId, record.discount)}
-                    >
-                        Изменить скидку
-                    </Button>
-                </div>
-            ),
-        },
-    ];
-
     if (loading) {
-        return (
-            <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100vh"}}>
-                <Spin indicator={<LoadingOutlined style={{fontSize: 48}} spin/>}/>
-            </div>
-        );
+        return <Group justify="center" py="xl"><Loader size="lg" color="miko" /></Group>;
     }
 
     return (
-        <div style={{maxWidth: "900px", margin: "20px auto"}}>
-            <Button onClick={() => navigate(-1)} type="primary" size="large" block icon={<ArrowLeftOutlined/>}>
-                Назад
-            </Button>
-            <Card
-                style={{marginTop: "20px", boxShadow: "0px 4px 10px rgba(0,0,0,0.1)", borderRadius: "10px"}}
-                bodyStyle={{padding: "20px"}}
-                cover={<Image src={product.imageUrl} alt={product.name}
-                              style={{width: "100%", height: "300px", objectFit: "cover"}}/>}
-            >
-                <Typography.Title level={3} style={{textAlign: "center"}}>{product.name}</Typography.Title>
-                <Typography.Paragraph style={{textAlign: "justify"}}>
-                    <div dangerouslySetInnerHTML={{__html: product.description}}/>
-                </Typography.Paragraph>
-                <Typography.Title level={4}>Цены и доступность</Typography.Title>
-                <div style={{overflowX: "auto"}}>
-                    <Table
-                        columns={columns}
-                        dataSource={product.prices}
-                        rowKey="cityId"
-                        pagination={false}
-                        scroll={{x: true}}
-                        style={{wordBreak: "normal", whiteSpace: "nowrap"}}
+        <Stack gap="md" maw={900} mx="auto">
+            <Group>
+                <Button
+                    leftSection={<IconArrowLeft size={16} />}
+                    variant="default"
+                    radius="md"
+                    onClick={() => navigate(-1)}
+                >
+                    Назад
+                </Button>
+            </Group>
+
+            <Card radius="xl" shadow="sm" p={0} style={{ overflow: 'hidden' }}>
+                <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    style={{ width: '100%', height: 280, objectFit: 'cover', display: 'block' }}
+                />
+                <Stack p="xl" gap="md">
+                    <Title order={3} ta="center">{product.name}</Title>
+                    <div
+                        dangerouslySetInnerHTML={{ __html: product.description }}
+                        style={{ color: 'var(--mantine-color-dimmed)' }}
                     />
-                </div>
-                <div style={{marginTop: "20px", display: "flex", justifyContent: "space-between"}}>
-                    <Button type="primary"
-                            onClick={() => navigate(`/admin/products/edit/${product.id}`)}>Изменить</Button>
-                    <Button type="danger" loading={isDeleting} onClick={handleDelete}>Удалить</Button>
-                </div>
+
+                    <Title order={4}>Цены и доступность</Title>
+                    <Table withTableBorder style={{ overflowX: 'auto' }}>
+                        <Table.Thead>
+                            <Table.Tr>
+                                <Table.Th>Город</Table.Th>
+                                <Table.Th>Цена (₸)</Table.Th>
+                                <Table.Th>Скидка (%)</Table.Th>
+                                <Table.Th>В наличии</Table.Th>
+                                <Table.Th>Действие</Table.Th>
+                            </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                            {product.prices.map((row) => (
+                                <Table.Tr key={row.cityId}>
+                                    <Table.Td>{getCityName(row.cityId)}</Table.Td>
+                                    <Table.Td>{formatCurrency(row.price)}</Table.Td>
+                                    <Table.Td>{row.discount}%</Table.Td>
+                                    <Table.Td>
+                                        <Badge color={row.availability ? 'teal' : 'red'} variant="light">
+                                            {row.availability ? 'Да' : 'Нет'}
+                                        </Badge>
+                                    </Table.Td>
+                                    <Table.Td>
+                                        <Stack gap="xs">
+                                            <Button
+                                                size="xs"
+                                                radius="md"
+                                                color={row.availability ? 'red' : 'teal'}
+                                                variant="light"
+                                                loading={loadingCityActions[row.cityId]}
+                                                onClick={() => handleToggleAvailability(row.cityId, !row.availability)}
+                                            >
+                                                {row.availability ? 'Снять с продажи' : 'Вернуть в продажу'}
+                                            </Button>
+                                            <Button
+                                                size="xs"
+                                                radius="md"
+                                                variant="default"
+                                                onClick={() => setPriceModal({ open: true, cityId: row.cityId, value: row.price })}
+                                            >
+                                                Изменить цену
+                                            </Button>
+                                            <Button
+                                                size="xs"
+                                                radius="md"
+                                                variant="default"
+                                                onClick={() => setDiscountModal({ open: true, cityId: row.cityId, value: row.discount })}
+                                            >
+                                                Изменить скидку
+                                            </Button>
+                                        </Stack>
+                                    </Table.Td>
+                                </Table.Tr>
+                            ))}
+                        </Table.Tbody>
+                    </Table>
+
+                    <Group justify="space-between" mt="sm">
+                        <Button
+                            leftSection={<IconEdit size={16} />}
+                            color="miko"
+                            radius="md"
+                            onClick={() => navigate(`/admin/products/edit/${product.id}`)}
+                        >
+                            Изменить
+                        </Button>
+                        <Button
+                            leftSection={<IconTrash size={16} />}
+                            color="red"
+                            variant="light"
+                            radius="md"
+                            onClick={handleDelete}
+                        >
+                            Удалить
+                        </Button>
+                    </Group>
+                </Stack>
             </Card>
+
+            {/* Price modal */}
             <Modal
+                opened={priceModal.open}
+                onClose={() => setPriceModal({ open: false, cityId: null, value: '' })}
                 title="Изменение цены"
-                visible={priceModalVisible}
-                onCancel={() => setPriceModalVisible(false)}
-                onOk={handlePriceUpdate}
-                okText="Сохранить"
-                cancelText="Отмена"
+                centered
+                radius="lg"
             >
-                <InputNumber
-                    min={0}
-                    precision={0}
-                    step={1}
-                    value={newPrice}
-                    onChange={(value) => setNewPrice(value)}
-                    placeholder="Введите новую цену"
-                    style={{ width: "100%" }}
-                />
+                <Stack gap="md">
+                    <NumberInput
+                        min={0}
+                        step={100}
+                        value={priceModal.value}
+                        onChange={(v) => setPriceModal((prev) => ({ ...prev, value: v }))}
+                        label="Новая цена"
+                        radius="md"
+                    />
+                    <Group justify="flex-end">
+                        <Button variant="default" radius="md" onClick={() => setPriceModal({ open: false, cityId: null, value: '' })}>Отмена</Button>
+                        <Button color="miko" radius="md" onClick={handlePriceUpdate}>Сохранить</Button>
+                    </Group>
+                </Stack>
             </Modal>
+
+            {/* Discount modal */}
             <Modal
+                opened={discountModal.open}
+                onClose={() => setDiscountModal({ open: false, cityId: null, value: '' })}
                 title="Изменение скидки"
-                visible={discountModalVisible}
-                onCancel={() => setDiscountModalVisible(false)}
-                onOk={handleDiscountUpdate}
-                okText="Сохранить"
-                cancelText="Отмена"
+                centered
+                radius="lg"
             >
-                <Input
-                    type="number"
-                    value={newDiscount}
-                    onChange={(e) => setNewDiscount(e.target.value)}
-                    placeholder="Введите новую скидку"
-                />
+                <Stack gap="md">
+                    <NumberInput
+                        min={0}
+                        max={100}
+                        value={discountModal.value}
+                        onChange={(v) => setDiscountModal((prev) => ({ ...prev, value: v }))}
+                        label="Процент скидки"
+                        radius="md"
+                    />
+                    <Group justify="flex-end">
+                        <Button variant="default" radius="md" onClick={() => setDiscountModal({ open: false, cityId: null, value: '' })}>Отмена</Button>
+                        <Button color="miko" radius="md" onClick={handleDiscountUpdate}>Сохранить</Button>
+                    </Group>
+                </Stack>
             </Modal>
-        </div>
+        </Stack>
     );
 };
 

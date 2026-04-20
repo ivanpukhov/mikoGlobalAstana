@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from "react";
-import api from "../../api/api";
-import {CatalogProducts} from "./CatalogProducts";
-import {Link} from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { Button } from '@mantine/core';
+import api from '../../api/api';
+import { CatalogProducts } from './CatalogProducts';
+import { ProductGridSkeleton } from '../ui';
+import { Link } from 'react-router-dom';
 
 export const ProductsList = () => {
     const [productsByCategory, setProductsByCategory] = useState({});
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [city, setCity] = useState(() => JSON.parse(localStorage.getItem("selectedCity")));
+    const [city] = useState(() => JSON.parse(localStorage.getItem('selectedCity')));
 
     useEffect(() => {
         if (!city) {
-            console.error("Город не выбран!");
             setLoading(false);
             return;
         }
@@ -19,33 +20,29 @@ export const ProductsList = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                const [categoriesRes, productsRes] = await Promise.all([
+                    api.get('/categories'),
+                    api.get(`/products/${city.id}/products`),
+                ]);
 
-                // Запрос категорий
-                const categoriesResponse = await api.get("/categories");
-                const categoriesData = categoriesResponse.data;
-
+                const categoriesData = categoriesRes.data;
                 setCategories(categoriesData);
 
-                // Запрос продуктов
-                const productsResponse = await api.get(`/products/${city.id}/products`);
-                const productsData = productsResponse.data;
-
-                // Группировка продуктов по categoryId
-                const groupedProducts = productsData.reduce((acc, product) => {
-                    const categoryId = product.categoryId;
-                    if (!acc[categoryId]) acc[categoryId] = [];
-                    acc[categoryId].push(product);
+                const grouped = productsRes.data.reduce((acc, product) => {
+                    const cid = product.categoryId;
+                    if (!acc[cid]) acc[cid] = [];
+                    acc[cid].push(product);
                     return acc;
                 }, {});
 
-                // Ограничение до 10 товаров в каждой категории
-                Object.keys(groupedProducts).forEach((categoryId) => {
-                    groupedProducts[categoryId] = groupedProducts[categoryId].slice(0, 12);
+                // Limit to 12 per category
+                Object.keys(grouped).forEach((cid) => {
+                    grouped[cid] = grouped[cid].slice(0, 12);
                 });
 
-                setProductsByCategory(groupedProducts);
-            } catch (error) {
-                console.error("Ошибка при загрузке данных:", error);
+                setProductsByCategory(grouped);
+            } catch (err) {
+                console.error('Ошибка при загрузке:', err);
             } finally {
                 setLoading(false);
             }
@@ -54,37 +51,45 @@ export const ProductsList = () => {
         fetchData();
     }, [city?.id]);
 
-    // Функция для поиска названия категории по ID
     const getCategoryName = (categoryId) => {
-        const category = categories.find((cat) => cat.id === Number(categoryId));
-        return category ? category.name : `Категория ${categoryId}`;
+        const cat = categories.find((c) => c.id === Number(categoryId));
+        return cat ? cat.name : `Категория ${categoryId}`;
     };
+
+    if (loading) {
+        return (
+            <>
+                <ProductGridSkeleton count={12} />
+            </>
+        );
+    }
 
     return (
         <>
-            {loading ? (
-                <p>Загрузка...</p>
-            ) : (
-                Object.keys(productsByCategory).map((categoryId) => {
-                    const products = productsByCategory[categoryId];
-                    const title = getCategoryName(categoryId); // Название категории из списка
-                    return (
-                        <>
-                            <CatalogProducts
-                                key={categoryId}
-                                title={title}
-                                sub={false}
-                                subcategories={[]}
-                                products={products}
-                                loading={false}
-                            />
-                            <Link to={`/catalog/${categoryId}`} className="show_more">
-                                Показать ещё
-                            </Link>
-                        </>
-                    );
-                })
-            )}
+            {Object.keys(productsByCategory).map((categoryId) => (
+                <div key={categoryId}>
+                    <CatalogProducts
+                        title={getCategoryName(categoryId)}
+                        sub={false}
+                        subcategories={[]}
+                        products={productsByCategory[categoryId]}
+                        loading={false}
+                    />
+                    <Button
+                        component={Link}
+                        to={`/catalog/${categoryId}`}
+                        variant="outline"
+                        color="miko"
+                        fullWidth
+                        radius="xl"
+                        mt="sm"
+                        mb="xl"
+                        size="md"
+                    >
+                        Показать ещё
+                    </Button>
+                </div>
+            ))}
         </>
     );
 };

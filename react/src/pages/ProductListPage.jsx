@@ -1,238 +1,263 @@
-import React, { useEffect, useState } from "react";
-import { Table, Button, Space, Typography, Input, Select, Spin, Modal, InputNumber } from "antd";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import api from "../api/api";
-import { useMediaQuery } from "react-responsive";
-import { formatCurrency } from "../utils/formatters";
+import { useEffect, useMemo, useState } from 'react';
+import {
+    Button,
+    Checkbox,
+    Group,
+    Loader,
+    Modal,
+    NumberInput,
+    Select,
+    Stack,
+    Table,
+    Text,
+    TextInput,
+    Title,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import api from '../api/api';
+import { formatCurrency } from '../utils/formatters';
 
-const { Title } = Typography;
-const { Search } = Input;
-const { Option } = Select;
+const defaultCityId = 1;
 
 const ProductListPage = () => {
     const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
     const [categories, setCategories] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState("");
-    const [searchValue, setSearchValue] = useState("");
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 20 });
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [searchValue, setSearchValue] = useState('');
     const [loading, setLoading] = useState(false);
-    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [discountModal, setDiscountModal] = useState(false);
     const [discountValue, setDiscountValue] = useState(0);
-    const [discountType, setDiscountType] = useState("");
+    const [discountType, setDiscountType] = useState('');
     const navigate = useNavigate();
-    const isSmallScreen = useMediaQuery({ query: "(max-width: 768px)" });
     const [searchParams, setSearchParams] = useSearchParams();
-    const defaultCityId = 1;
 
     useEffect(() => {
-        const categoryFromURL = searchParams.get("category") || "";
-        const searchFromURL = searchParams.get("search") || "";
-        const pageFromURL = parseInt(searchParams.get("page")) || 1;
-        const pageSizeFromURL = parseInt(searchParams.get("pageSize")) || 50;
-        setSelectedCategory(categoryFromURL);
-        setSearchValue(searchFromURL);
-        setPagination({ current: pageFromURL, pageSize: pageSizeFromURL });
-    }, [searchParams]);
+        setSelectedCategory(searchParams.get('category') || '');
+        setSearchValue(searchParams.get('search') || '');
+    }, []);
 
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const { data } = await api.get("/products");
-            const transformedProducts = data.map((product) => ({
-                ...product,
-                categoryName: product.category?.name,
-                categoryId: product.category?.id,
-                subcategoryName: product.subcategory?.name,
-                defaultPrice: product.prices[0]?.price || 0,
-                defaultDiscount: product.prices[0]?.discount || 0,
-                imageUrl: `/api${product.image}`,
+            const { data } = await api.get('/products');
+            const transformed = data.map((p) => ({
+                ...p,
+                categoryName: p.category?.name,
+                categoryId: p.category?.id,
+                subcategoryName: p.subcategory?.name,
+                defaultPrice: p.prices[0]?.price || 0,
+                imageUrl: `/api${p.image}`,
             }));
-            setProducts(transformedProducts);
-            setFilteredProducts(filterProducts(transformedProducts, selectedCategory, searchValue));
-            const uniqueCategories = Array.from(new Map(transformedProducts.map((p) => [p.categoryId, { id: p.categoryId, name: p.categoryName }])).values()).filter(cat => cat.id);
+            setProducts(transformed);
+            const uniqueCategories = Array.from(
+                new Map(transformed.map((p) => [p.categoryId, { id: p.categoryId, name: p.categoryName }])).values()
+            ).filter((c) => c.id);
             setCategories(uniqueCategories);
-        } catch (error) {
-            console.error("Ошибка загрузки товаров:", error);
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка загрузки товаров' });
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
+    useEffect(() => { fetchProducts(); }, []);
 
-    const filterProducts = (products, category, search) => {
-        const lowercasedSearch = search.toLowerCase();
-        return products.filter((product) =>
-            (category ? product.categoryId?.toString() === category : true) &&
-            (product.name.toLowerCase().includes(lowercasedSearch) ||
-                product.subcategoryName?.toLowerCase().includes(lowercasedSearch))
+    const filteredProducts = useMemo(() => {
+        const q = searchValue.toLowerCase();
+        return products.filter(
+            (p) =>
+                (selectedCategory ? p.categoryId?.toString() === selectedCategory : true) &&
+                (p.name.toLowerCase().includes(q) || p.subcategoryName?.toLowerCase().includes(q))
+        );
+    }, [products, selectedCategory, searchValue]);
+
+    const toggleRow = (id) => {
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
         );
     };
 
-    useEffect(() => {
-        setFilteredProducts(filterProducts(products, selectedCategory, searchValue));
-    }, [selectedCategory, searchValue, products]);
-
-    const handleSearch = (value) => {
-        setSearchValue(value);
-        updateURL({ search: value, page: 1 });
-    };
-
-    const handleCategoryChange = (category) => {
-        setSelectedCategory(category);
-        updateURL({ category, page: 1 });
-    };
-
-    const updateURL = (updates) => {
-        setSearchParams((prev) => {
-            const newParams = new URLSearchParams(prev);
-            Object.entries(updates).forEach(([key, value]) => {
-                if (value) {
-                    newParams.set(key, value);
-                } else {
-                    newParams.delete(key);
-                }
-            });
-            return newParams;
-        });
-    };
-
-    const handleTableChange = (pagination) => {
-        setPagination(pagination);
-        updateURL({ page: pagination.current, pageSize: pagination.pageSize });
-    };
-
-    const handleRowSelectionChange = (selectedKeys) => {
-        setSelectedRowKeys(selectedKeys);
+    const toggleAll = () => {
+        setSelectedIds((prev) =>
+            prev.length === filteredProducts.length ? [] : filteredProducts.map((p) => p.id)
+        );
     };
 
     const handleDiscountUpdate = async () => {
         try {
-            if (discountType === "selected") {
-                await api.patch(`/${defaultCityId}/multiple/discount`, { discount: discountValue, productIds: selectedRowKeys });
-                setSelectedRowKeys([]);
-            } else if (discountType === "category") {
-                await api.patch(`/${defaultCityId}/category/${selectedCategory}/discount`, { discount: discountValue });
+            if (discountType === 'selected') {
+                await api.patch(`/${defaultCityId}/multiple/discount`, {
+                    discount: discountValue,
+                    productIds: selectedIds,
+                });
+                setSelectedIds([]);
+            } else if (discountType === 'category') {
+                await api.patch(`/${defaultCityId}/category/${selectedCategory}/discount`, {
+                    discount: discountValue,
+                });
             }
-            setIsModalVisible(false);
+            setDiscountModal(false);
             setDiscountValue(0);
-            setDiscountType("");
+            setDiscountType('');
             fetchProducts();
-        } catch (error) {
-            console.error("Ошибка обновления скидки:", error);
+            notifications.show({ color: 'teal', message: 'Скидка обновлена' });
+        } catch {
+            notifications.show({ color: 'red', message: 'Ошибка обновления скидки' });
         }
     };
 
-    const columns = [
-        {
-            title: "Название",
-            dataIndex: "name",
-            key: "name",
-            render: (text) => <strong>{text}</strong>,
-        },
-        {
-            title: "Категория",
-            dataIndex: "categoryName",
-            key: "categoryName",
-        },
-        {
-            title: "Подкатегория",
-            dataIndex: "subcategoryName",
-            key: "subcategoryName",
-        },
-        {
-            title: "Цена",
-            dataIndex: "defaultPrice",
-            key: "defaultPrice",
-            render: (price) => formatCurrency(price),
-        },
-        {
-            title: "Действия",
-            key: "actions",
-            render: (_, record) => (
-                <Space direction={isSmallScreen ? "vertical" : "horizontal"}>
-                    <Button type="primary" onClick={() => navigate(`/admin/products/view/${record.id}`)}>Подробно</Button>
-                    <Button type="default" onClick={() => navigate(`/admin/products/edit/${record.id}`)}>Изменить</Button>
-                </Space>
-            ),
-        },
-    ];
+    const allSelected = filteredProducts.length > 0 && selectedIds.length === filteredProducts.length;
+    const someSelected = selectedIds.length > 0 && !allSelected;
 
     return (
-        <div style={{ padding: "20px" }}>
-            <Title level={3} style={{ marginBottom: 16 }}>Список товаров</Title>
-            <Space style={{ marginBottom: 16, width: "100%" }} direction="vertical">
-                <Space wrap>
-                    <Search placeholder="Поиск по названию или подкатегории" allowClear value={searchValue} onChange={(e) => handleSearch(e.target.value)} style={{ maxWidth: 400 }} />
-                    <Select placeholder="Выберите категорию" allowClear value={selectedCategory} onChange={handleCategoryChange} style={{ minWidth: 200 }}>
-                        {categories.map((category) => (
-                            <Option key={category.id} value={category.id.toString()}>{category.name}</Option>
-                        ))}
-                    </Select>
-                </Space>
-                <Space wrap>
-                    {selectedRowKeys.length > 0 && (
-                        <Button type="primary" onClick={() => { setDiscountType("selected"); setIsModalVisible(true); }}>
-                            Установить скидку для выбранных товаров
-                        </Button>
-                    )}
-                    {selectedCategory && (
-                        <Button type="primary" onClick={() => { setDiscountType("category"); setIsModalVisible(true); }}>
-                            Установить скидку для категории
-                        </Button>
-                    )}
-                    <Button type="primary" onClick={() => navigate("/admin/products/create")}>
-                        Добавить товар
+        <Stack gap="md">
+            <Group justify="space-between">
+                <Title order={3} fw={700}>Список товаров</Title>
+                <Button
+                    color="miko"
+                    radius="md"
+                    leftSection={<IconPlus size={16} />}
+                    onClick={() => navigate('/admin/products/create')}
+                >
+                    Добавить товар
+                </Button>
+            </Group>
+
+            <Group gap="sm" wrap="wrap">
+                <TextInput
+                    placeholder="Поиск по названию или подкатегории"
+                    leftSection={<IconSearch size={16} />}
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    w={320}
+                    radius="md"
+                />
+                <Select
+                    placeholder="Все категории"
+                    value={selectedCategory || null}
+                    onChange={(v) => setSelectedCategory(v || '')}
+                    clearable
+                    data={categories.map((c) => ({ value: c.id.toString(), label: c.name }))}
+                    w={220}
+                    radius="md"
+                />
+            </Group>
+
+            {selectedIds.length > 0 && (
+                <Group gap="sm">
+                    <Button
+                        size="sm"
+                        color="miko"
+                        radius="md"
+                        variant="light"
+                        onClick={() => { setDiscountType('selected'); setDiscountModal(true); }}
+                    >
+                        Скидка для {selectedIds.length} выбранных
                     </Button>
-                </Space>
-            </Space>
-            {loading ? (
-                <div style={{ textAlign: "center", marginTop: 50 }}>
-                    <Spin size="large" />
-                </div>
-            ) : (
-                <Table
-                    dataSource={filteredProducts}
-                    columns={columns}
-                    rowKey="id"
-                    bordered
-                    pagination={{
-                        current: pagination.current,
-                        pageSize: pagination.pageSize,
-                        showSizeChanger: true,
-                        pageSizeOptions: ["20", "50", "100", "200"],
-                    }}
-                    onChange={handleTableChange}
-                    rowSelection={{
-                        selectedRowKeys,
-                        onChange: handleRowSelectionChange
-                    }}
-                    style={{
-                        background: "#fff",
-                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                        borderRadius: "8px",
-                    }}
-                />
+                </Group>
             )}
+            {selectedCategory && (
+                <Group>
+                    <Button
+                        size="sm"
+                        color="miko"
+                        radius="md"
+                        variant="light"
+                        onClick={() => { setDiscountType('category'); setDiscountModal(true); }}
+                    >
+                        Скидка для категории
+                    </Button>
+                </Group>
+            )}
+
+            {loading ? (
+                <Group justify="center" py="xl"><Loader color="miko" /></Group>
+            ) : (
+                <Table striped highlightOnHover withTableBorder radius="md" style={{ overflowX: 'auto' }}>
+                    <Table.Thead>
+                        <Table.Tr>
+                            <Table.Th>
+                                <Checkbox
+                                    checked={allSelected}
+                                    indeterminate={someSelected}
+                                    onChange={toggleAll}
+                                />
+                            </Table.Th>
+                            <Table.Th>Название</Table.Th>
+                            <Table.Th>Категория</Table.Th>
+                            <Table.Th>Подкатегория</Table.Th>
+                            <Table.Th>Цена</Table.Th>
+                            <Table.Th>Действия</Table.Th>
+                        </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                        {filteredProducts.map((p) => (
+                            <Table.Tr
+                                key={p.id}
+                                bg={selectedIds.includes(p.id) ? 'var(--mantine-color-miko-0)' : undefined}
+                            >
+                                <Table.Td>
+                                    <Checkbox
+                                        checked={selectedIds.includes(p.id)}
+                                        onChange={() => toggleRow(p.id)}
+                                    />
+                                </Table.Td>
+                                <Table.Td fw={600}>{p.name}</Table.Td>
+                                <Table.Td>{p.categoryName || '—'}</Table.Td>
+                                <Table.Td>{p.subcategoryName || '—'}</Table.Td>
+                                <Table.Td>{formatCurrency(p.defaultPrice)}</Table.Td>
+                                <Table.Td>
+                                    <Group gap="xs">
+                                        <Button
+                                            size="xs"
+                                            color="miko"
+                                            radius="md"
+                                            onClick={() => navigate(`/admin/products/view/${p.id}`)}
+                                        >
+                                            Подробно
+                                        </Button>
+                                        <Button
+                                            size="xs"
+                                            variant="default"
+                                            radius="md"
+                                            onClick={() => navigate(`/admin/products/edit/${p.id}`)}
+                                        >
+                                            Изменить
+                                        </Button>
+                                    </Group>
+                                </Table.Td>
+                            </Table.Tr>
+                        ))}
+                    </Table.Tbody>
+                </Table>
+            )}
+
             <Modal
-                title="Установить скидку"
-                visible={isModalVisible}
-                onOk={handleDiscountUpdate}
-                onCancel={() => { setIsModalVisible(false); setDiscountValue(0); setDiscountType(""); }}
+                opened={discountModal}
+                onClose={() => setDiscountModal(false)}
+                title="Установить скидку (%)"
+                centered
+                radius="lg"
             >
-                <InputNumber
-                    min={0}
-                    max={100}
-                    value={discountValue}
-                    onChange={(value) => setDiscountValue(value)}
-                    style={{ width: "100%" }}
-                />
+                <Stack gap="md">
+                    <NumberInput
+                        min={0}
+                        max={100}
+                        value={discountValue}
+                        onChange={setDiscountValue}
+                        radius="md"
+                        label="Процент скидки"
+                    />
+                    <Group justify="flex-end">
+                        <Button variant="default" radius="md" onClick={() => setDiscountModal(false)}>Отмена</Button>
+                        <Button color="miko" radius="md" onClick={handleDiscountUpdate}>Применить</Button>
+                    </Group>
+                </Stack>
             </Modal>
-        </div>
+        </Stack>
     );
 };
 

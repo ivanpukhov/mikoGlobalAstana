@@ -1,85 +1,92 @@
-import React, { useState, useEffect } from "react";
-import styles from "./ProductsList.module.scss";
-import { CatalogProduct } from "./CatalogProduct";
-import {useParams} from "react-router-dom"; // Компонент товара
+import { useEffect, useState } from 'react';
+import { Chip, Group, SimpleGrid, Text, Title } from '@mantine/core';
+import { CatalogProduct } from './CatalogProduct';
+import { ProductGridSkeleton } from '../ui';
+import { useParams } from 'react-router-dom';
+import { EmptyState } from '../ui';
 
 export const CatalogProducts = ({ title, sub, products, loading, onQuantityChange }) => {
     const [subcategories, setSubcategories] = useState([]);
     const [activeSub, setActiveSub] = useState(null);
-    const { categoryId } = useParams(); // Получаем categoryId из URL
-    // Загружаем подкатегории при загрузке компонента
+    const { categoryId } = useParams();
+
     useEffect(() => {
+        if (!categoryId) return;
         const fetchSubcategories = async () => {
             try {
-                const response = await fetch(`/api/categories/${categoryId}/subcategories`);
-                const data = await response.json();
-                setSubcategories(data.subcategories);
-            } catch (error) {
-                console.error("Ошибка загрузки подкатегорий:", error);
+                const res = await fetch(`/api/categories/${categoryId}/subcategories`);
+                const data = await res.json();
+                setSubcategories(data.subcategories || []);
+            } catch {
+                // silent
             }
         };
-
         fetchSubcategories();
     }, [categoryId]);
 
-    // Фильтруем товары по выбранной подкатегории
-    const filteredProducts = activeSub === null
-        ? products
-        : products.filter((product) => product.subcategoryId === activeSub);
-
-    const handleSubClick = (subcategoryId) => {
-        setActiveSub(subcategoryId);
-    };
-
-    const handleQuantityChange = (productId, newQuantity) => {
-        if (onQuantityChange) {
-            onQuantityChange(productId, newQuantity);
-        }
-    };
+    const filteredProducts =
+        activeSub === null
+            ? products
+            : products.filter((p) => p.subcategoryId === activeSub);
 
     return (
-        <div className={styles.products}>
-            <div className={styles.products__title}>{title}</div>
-
-            {/* Блок фильтрации по подкатегориям */}
-            {sub && subcategories.length > 0 && (
-                <div className={styles.sub}>
-                    <div
-                        className={`${styles.sub__item} ${activeSub === null ? styles.active : ""}`}
-                        onClick={() => handleSubClick(null)}
-                    >
-                        Все
-                    </div>
-                    {subcategories.map((subcategory) => (
-                        <div
-                            key={subcategory.id}
-                            className={`${styles.sub__item} ${
-                                activeSub === subcategory.id ? styles.active : ""
-                            }`}
-                            onClick={() => handleSubClick(subcategory.id)}
-                        >
-                            {subcategory.name}
-                        </div>
-                    ))}
-                </div>
+        <div>
+            {title && (
+                <Title order={2} fw={700} mb="md" mt="xl">
+                    {title}
+                </Title>
             )}
 
-            {/* Список товаров */}
-            <div className={styles.products__list}>
-                {loading ? (
-                    <p>Загрузка...</p>
-                ) : filteredProducts.length > 0 ? (
-                    filteredProducts.map((product) => (
+            {/* Subcategory filter chips */}
+            {sub && subcategories.length > 0 && (
+                <Group gap="xs" mb="md" style={{ overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
+                    <Chip
+                        checked={activeSub === null}
+                        onChange={() => setActiveSub(null)}
+                        color="miko"
+                        variant="filled"
+                        size="sm"
+                    >
+                        Все
+                    </Chip>
+                    {subcategories.map((sub) => (
+                        <Chip
+                            key={sub.id}
+                            checked={activeSub === sub.id}
+                            onChange={() => setActiveSub(activeSub === sub.id ? null : sub.id)}
+                            color="miko"
+                            variant="filled"
+                            size="sm"
+                        >
+                            {sub.name}
+                        </Chip>
+                    ))}
+                </Group>
+            )}
+
+            {/* Products grid */}
+            {loading ? (
+                <ProductGridSkeleton count={10} />
+            ) : filteredProducts.length > 0 ? (
+                <SimpleGrid
+                    cols={{ base: 2, xs: 2, sm: 3, md: 4, lg: 5, xl: 6 }}
+                    spacing="md"
+                >
+                    {filteredProducts.map((product) => (
                         <CatalogProduct
                             key={product.id}
                             product={product}
-                            onQuantityChange={handleQuantityChange}
+                            onQuantityChange={onQuantityChange}
                         />
-                    ))
-                ) : (
-                    <p>Товары не найдены</p>
-                )}
-            </div>
+                    ))}
+                </SimpleGrid>
+            ) : (
+                <EmptyState
+                    title="Товары не найдены"
+                    description="Попробуйте выбрать другую подкатегорию"
+                    minHeight="20vh"
+                />
+            )}
         </div>
     );
 };

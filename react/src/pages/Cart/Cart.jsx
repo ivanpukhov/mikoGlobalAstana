@@ -1,17 +1,25 @@
-import { useState, useEffect } from "react";
-import InputMask from "react-input-mask";
-import Swal from "sweetalert2";
-import { Empty, Button } from "antd";
-import { useNavigate } from "react-router-dom";
-import { CartList } from "./CartList";
-import api from "../../api/api";
-import money from "../../images/cart/money.svg";
-import kaspi from "../../images/cart/kaspi.svg";
-import shop from "../../images/cart/shop.svg";
-import select from "../../images/cart/select.svg";
-import delivery from "../../images/cart/delivery.svg";
-import { formatCurrency } from "../../utils/formatters";
-import { EVERY_ORDER_GIFT, getNextOrderGiftTier, getOrderGiftTier } from "../../utils/orderGifts";
+import { useState, useEffect } from 'react';
+import InputMask from 'react-input-mask';
+import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
+import {
+    Box,
+    Button,
+    Grid,
+    Group,
+    Paper,
+    Radio,
+    Stack,
+    Text,
+    TextInput,
+    Title,
+} from '@mantine/core';
+import { IconShoppingCartOff, IconTag, IconTruck } from '@tabler/icons-react';
+import { CartList } from './CartList';
+import api from '../../api/api';
+import { EmptyState } from '../../components/ui';
+import { formatCurrency } from '../../utils/formatters';
+import { EVERY_ORDER_GIFT, getNextOrderGiftTier, getOrderGiftTier } from '../../utils/orderGifts';
 
 export const Cart = () => {
     const [form, setForm] = useState({
@@ -19,105 +27,88 @@ export const Cart = () => {
         address: '',
         phone: '',
         paymentMethod: 'kaspi',
-        deliveryMethod: ''
+        deliveryMethod: '',
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [totalPrice, setTotalPrice] = useState(0);
     const [cart, setCart] = useState({});
-    const [promoCode, setPromoCode] = useState(""); // Введенный пользователем промокод
-    const [promoData, setPromoData] = useState(null); // Данные о промокоде
-    const [isCheckingPromo, setIsCheckingPromo] = useState(false); // Флаг проверки промокода
+    const [promoCode, setPromoCode] = useState('');
+    const [promoData, setPromoData] = useState(null);
+    const [isCheckingPromo, setIsCheckingPromo] = useState(false);
     const [giftData, setGiftData] = useState(null);
 
     const navigate = useNavigate();
 
     const getDiscountedPrice = (product) => {
-        const priceWithoutDiscount = product.price || product.prices?.[0]?.price || 0;
-        const discount = product.discount || product.prices?.[0]?.discount || 0;
-        return priceWithoutDiscount - (priceWithoutDiscount * discount / 100);
+        const p = product.price || product.prices?.[0]?.price || 0;
+        const d = product.discount || product.prices?.[0]?.discount || 0;
+        return p - (p * d) / 100;
     };
 
     const recalculateTotal = () => {
-        const cartData = JSON.parse(localStorage.getItem("cart")) || {};
+        const cartData = JSON.parse(localStorage.getItem('cart')) || {};
         const validCart = {};
-
         const newTotal = Object.values(cartData).reduce((sum, product) => {
-            if (product.quantity < 1) {
-                return sum;
-            }
-
-            const discountedPrice = getDiscountedPrice(product);
+            if (!product || product.quantity < 1) return sum;
             validCart[product.id] = product;
-
-            return sum + discountedPrice * (product.quantity || 1);
+            return sum + getDiscountedPrice(product) * (product.quantity || 1);
         }, 0);
-
-        localStorage.setItem("cart", JSON.stringify(validCart));
+        localStorage.setItem('cart', JSON.stringify(validCart));
         setCart(validCart);
         setTotalPrice(newTotal);
     };
 
     useEffect(() => {
         recalculateTotal();
-
-        const gift = localStorage.getItem("gift");
+        const gift = localStorage.getItem('gift');
         if (gift) {
             api.get(`/purchased-certificates/validate/${gift}`)
-                .then(response => {
-                    if (response.data.valid) {
-                        setGiftData(response.data);
-                    } else {
-                        localStorage.removeItem("gift");
+                .then((res) => {
+                    if (res.data.valid) setGiftData(res.data);
+                    else {
+                        localStorage.removeItem('gift');
                         setGiftData(null);
-                        Swal.fire("Ошибка", "Сертификат больше недействителен", "error");
+                        Swal.fire('Ошибка', 'Сертификат больше недействителен', 'error');
                     }
                 })
                 .catch(() => {
-                    localStorage.removeItem("gift");
+                    localStorage.removeItem('gift');
                     setGiftData(null);
-                    Swal.fire("Ошибка", "Не удалось проверить сертификат", "error");
+                    Swal.fire('Ошибка', 'Не удалось проверить сертификат', 'error');
                 });
         }
     }, []);
 
-
-
-
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm(prevForm => ({ ...prevForm, [name]: value }));
+        setForm((prev) => ({ ...prev, [name]: value }));
     };
 
     const validate = () => {
         const newErrors = {};
-        if (!form.name.trim()) newErrors.name = "Введите имя и фамилию";
-        if (!form.address.trim()) newErrors.address = "Введите адрес";
-        if (form.phone.replace(/[^0-9]/g, '').length !== 11) newErrors.phone = "Введите корректный номер телефона";
-        if (!form.deliveryMethod) newErrors.deliveryMethod = "Выберите способ доставки";
+        if (!form.name.trim()) newErrors.name = 'Введите имя и фамилию';
+        if (!form.address.trim()) newErrors.address = 'Введите адрес';
+        if (form.phone.replace(/[^0-9]/g, '').length !== 11) newErrors.phone = 'Введите корректный номер телефона';
+        if (!form.deliveryMethod) newErrors.deliveryMethod = 'Выберите способ доставки';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleCheckPromoCode = async () => {
-        if (!promoCode.trim()) {
-            Swal.fire("Ошибка", "Введите промокод", "error");
-            return;
-        }
-
+        if (!promoCode.trim()) { Swal.fire('Ошибка', 'Введите промокод', 'error'); return; }
         setIsCheckingPromo(true);
         try {
-            const response = await api.get(`/promocodes/${promoCode}`);
-            setPromoData(response.data);
+            const res = await api.get(`/promocodes/${promoCode}`);
+            setPromoData(res.data);
             Swal.fire(
-                "Промокод активирован!",
-                `Скидка: ${response.data.discountPercentage ? response.data.discountPercentage + "%" : formatCurrency(response.data.discountAmount)}`,
-                "success"
+                'Промокод активирован!',
+                `Скидка: ${res.data.discountPercentage ? res.data.discountPercentage + '%' : formatCurrency(res.data.discountAmount)}`,
+                'success'
             );
-        } catch (error) {
-            console.error("Ошибка при проверке промокода:", error);
+        } catch {
             setPromoData(null);
-            Swal.fire("Ошибка", "Промокод недействителен или истёк", "error");
+            Swal.fire('Ошибка', 'Промокод недействителен или истёк', 'error');
         } finally {
             setIsCheckingPromo(false);
         }
@@ -126,31 +117,28 @@ export const Cart = () => {
     const finalPrice = giftData
         ? Math.max(0, totalPrice - giftData.amount)
         : promoData
-            ? Math.max(
-                0,
-                promoData.discountPercentage
-                    ? totalPrice * (1 - promoData.discountPercentage / 100)
-                    : totalPrice - promoData.discountAmount
-            )
-            : totalPrice;
+        ? Math.max(
+              0,
+              promoData.discountPercentage
+                  ? totalPrice * (1 - promoData.discountPercentage / 100)
+                  : totalPrice - promoData.discountAmount
+          )
+        : totalPrice;
+
     const currentGiftTier = getOrderGiftTier(totalPrice);
     const nextGiftTier = getNextOrderGiftTier(totalPrice);
-
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) return;
 
-        const items = Object.values(cart).map(product => ({
+        const items = Object.values(cart).filter(Boolean).map((product) => ({
             productId: product.id,
-            quantity: product.quantity || 1
+            quantity: product.quantity || 1,
         }));
 
-        const selectedCity = JSON.parse(localStorage.getItem("selectedCity"));
-        if (!selectedCity) {
-            Swal.fire("Ошибка", "Пожалуйста, выберите город.", "error");
-            return;
-        }
+        const selectedCity = JSON.parse(localStorage.getItem('selectedCity'));
+        if (!selectedCity) { Swal.fire('Ошибка', 'Пожалуйста, выберите город.', 'error'); return; }
 
         const orderData = {
             customerName: form.name,
@@ -160,204 +148,238 @@ export const Cart = () => {
             paymentMethod: form.paymentMethod,
             cityId: selectedCity.id,
             items,
-            totalAmount: totalPrice, // Промокод НЕ меняет totalPrice на фронте, только передается
-            promoCodeName: promoData ? promoData.name : null, // Передаем промокод на бэкенд
-            giftCertificateCode: giftData ? localStorage.getItem("gift") : null, // Если есть валидный сертификат, добавляем код
+            totalAmount: totalPrice,
+            promoCodeName: promoData ? promoData.name : null,
+            giftCertificateCode: giftData ? localStorage.getItem('gift') : null,
         };
 
         try {
             setIsSubmitting(true);
             await api.post('/orders', orderData);
-            if (giftData) {
-                localStorage.removeItem("gift");
-                setGiftData(null);
-            }
-
-            Swal.fire({
-                title: "Заказ успешно оформлен!",
-                text: `Ваш заказ из города ${selectedCity.name} принят.`,
-                icon: "success",
-                confirmButtonText: "Ок"
-            });
-            localStorage.removeItem("cart");
-            setForm({
-                name: '',
-                address: '',
-                phone: '',
-                paymentMethod: '',
-                deliveryMethod: ''
-            });
+            if (giftData) { localStorage.removeItem('gift'); setGiftData(null); }
+            Swal.fire({ title: 'Заказ успешно оформлен!', text: `Ваш заказ из города ${selectedCity.name} принят.`, icon: 'success', confirmButtonText: 'Ок' });
+            localStorage.removeItem('cart');
+            setForm({ name: '', address: '', phone: '', paymentMethod: '', deliveryMethod: '' });
             setCart({});
             setTotalPrice(0);
-        } catch (error) {
-            console.error("Ошибка при отправке заказа:", error);
-            Swal.fire("Ошибка", "Не удалось оформить заказ. Попробуйте снова.", "error");
+        } catch {
+            Swal.fire('Ошибка', 'Не удалось оформить заказ. Попробуйте снова.', 'error');
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    if (Object.keys(cart).length === 0) {
+        return (
+            <EmptyState
+                icon={IconShoppingCartOff}
+                title="Ваша корзина пуста"
+                description="Добавьте товары из каталога, чтобы оформить заказ"
+                action={
+                    <Button color="miko" radius="xl" size="md" onClick={() => navigate('/categories')}>
+                        Перейти в каталог
+                    </Button>
+                }
+            />
+        );
+    }
+
     return (
-        <div className="cart">
-            {Object.keys(cart).length === 0 ? (
-                <div className="cart__empty">
-                    <Empty
-                        description="Ваша корзина пуста"
-                    >
-                        <Button type="primary" onClick={() => navigate("/categories")}>Перейти в каталог</Button>
-                    </Empty>
-                </div>
-            ) : (
-                <>
-                    <div className="cart__right">
-                        <div className="cart__title">Заполните данные</div>
-                        <form className="cart__form" onSubmit={handleSubmit}>
-                            <input
-                                type="text"
-                                name="name"
-                                placeholder="Имя и фамилия"
-                                value={form.name}
-                                onChange={handleChange}
-                            />
-                            {errors.name && <div className="error">{errors.name}</div>}
+        <Box mt="xl" pb="xl">
+            <Grid gutter="xl" align="flex-start">
+                {/* Left — order form */}
+                <Grid.Col span={{ base: 12, md: 5 }}>
+                    <Stack gap="lg">
+                        <Title order={2} fw={700}>Заполните данные</Title>
 
-                            <input
-                                type="text"
-                                name="address"
-                                placeholder="Адрес"
-                                value={form.address}
-                                onChange={handleChange}
-                            />
-                            {errors.address && <div className="error">{errors.address}</div>}
-
-                            <InputMask
-                                mask="+7 999 999 99 99"
-                                value={form.phone}
-                                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                            >
-                                {(inputProps) => <input {...inputProps} type="text" placeholder="Номер телефона" />}
-                            </InputMask>
-                            {errors.phone && <div className="error">{errors.phone}</div>}
-                            {totalPrice > 5000 && !giftData && (
-                                <>
-                                    <input
-                                        type="text"
-                                        placeholder="Введите промокод"
-                                        value={promoCode}
-                                        onChange={(e) => setPromoCode(e.target.value)}
-                                    />
-                                    {!promoData && (
-                                        <button type="button" onClick={handleCheckPromoCode} disabled={isCheckingPromo}>
-                                            {isCheckingPromo ? "Проверка..." : "Активировать"}
-                                        </button>
+                        <form onSubmit={handleSubmit}>
+                            <Stack gap="md">
+                                <TextInput
+                                    label="Имя и фамилия"
+                                    name="name"
+                                    placeholder="Имя и фамилия"
+                                    value={form.name}
+                                    onChange={handleChange}
+                                    error={errors.name}
+                                    radius="md"
+                                />
+                                <TextInput
+                                    label="Адрес"
+                                    name="address"
+                                    placeholder="Адрес доставки"
+                                    value={form.address}
+                                    onChange={handleChange}
+                                    error={errors.address}
+                                    radius="md"
+                                />
+                                <InputMask
+                                    mask="+7 999 999 99 99"
+                                    value={form.phone}
+                                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                                >
+                                    {(inputProps) => (
+                                        <TextInput
+                                            {...inputProps}
+                                            label="Номер телефона"
+                                            placeholder="+7 777 777 77 77"
+                                            error={errors.phone}
+                                            radius="md"
+                                        />
                                     )}
-                                </>
-                            )}
+                                </InputMask>
 
-
-
-
-
-
-
-                            <div className='cart__select'>
-                                <div className="cart__select--title">Способ доставки</div>
-                                <div className="cart__select--block">
-                                    <label className="cart__select--item">
-                                        <input
-                                            type="radio"
-                                            name="deliveryMethod"
-                                            value="pickup"
-                                            checked={form.deliveryMethod === "pickup"}
-                                            onChange={handleChange}
+                                {/* Promo code */}
+                                {totalPrice > 5000 && !giftData && (
+                                    <Group gap="sm" align="flex-end">
+                                        <TextInput
+                                            label="Промокод"
+                                            placeholder="Введите промокод"
+                                            value={promoCode}
+                                            onChange={(e) => setPromoCode(e.target.value)}
+                                            radius="md"
+                                            leftSection={<IconTag size={16} />}
+                                            style={{ flex: 1 }}
+                                            disabled={!!promoData}
                                         />
-                                        <img src={shop} alt=""/>
-                                        Самовывоз
-                                        <div className='indicator'>
-                                            <img src={select} alt=""/>
-                                        </div>
-                                    </label>
-                                    <label className="cart__select--item">
-                                        <input
-                                            type="radio"
-                                            name="deliveryMethod"
-                                            value="delivery"
-                                            checked={form.deliveryMethod === "delivery"}
-                                            onChange={handleChange}
-                                        />
-                                        <img src={delivery} alt=""/>
-                                        Доставка
-                                        <div className='indicator'>
-                                            <img src={select} alt=""/>
-                                        </div>
-                                    </label>
+                                        {!promoData && (
+                                            <Button
+                                                variant="light"
+                                                color="miko"
+                                                onClick={handleCheckPromoCode}
+                                                loading={isCheckingPromo}
+                                                radius="md"
+                                            >
+                                                Активировать
+                                            </Button>
+                                        )}
+                                    </Group>
+                                )}
 
+                                {/* Delivery method */}
+                                <Box>
+                                    <Text fw={600} mb="xs">Способ доставки</Text>
+                                    <Radio.Group
+                                        value={form.deliveryMethod}
+                                        onChange={(v) => setForm({ ...form, deliveryMethod: v })}
+                                        error={errors.deliveryMethod}
+                                    >
+                                        <Stack gap="sm">
+                                            <Paper
+                                                withBorder
+                                                p="md"
+                                                radius="md"
+                                                style={{
+                                                    borderColor: form.deliveryMethod === 'pickup' ? '#0CE3CB' : undefined,
+                                                    cursor: 'pointer',
+                                                }}
+                                                onClick={() => setForm({ ...form, deliveryMethod: 'pickup' })}
+                                            >
+                                                <Radio
+                                                    value="pickup"
+                                                    label={
+                                                        <Group gap="xs">
+                                                            <Text fw={500}>Самовывоз</Text>
+                                                        </Group>
+                                                    }
+                                                    color="miko"
+                                                />
+                                            </Paper>
+                                            <Paper
+                                                withBorder
+                                                p="md"
+                                                radius="md"
+                                                style={{
+                                                    borderColor: form.deliveryMethod === 'delivery' ? '#0CE3CB' : undefined,
+                                                    cursor: 'pointer',
+                                                }}
+                                                onClick={() => setForm({ ...form, deliveryMethod: 'delivery' })}
+                                            >
+                                                <Radio
+                                                    value="delivery"
+                                                    label={
+                                                        <Group gap="xs">
+                                                            <IconTruck size={16} />
+                                                            <Text fw={500}>Доставка</Text>
+                                                        </Group>
+                                                    }
+                                                    color="miko"
+                                                />
+                                            </Paper>
+                                        </Stack>
+                                    </Radio.Group>
+                                </Box>
 
-                                </div>
-                                {errors.deliveryMethod && <div className="error">{errors.deliveryMethod}</div>}
-                            </div>
-
-                            <button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Отправка..." : "Купить"}
-                            </button>
+                                <Button
+                                    type="submit"
+                                    fullWidth
+                                    size="lg"
+                                    color="miko"
+                                    radius="xl"
+                                    loading={isSubmitting}
+                                    mt="sm"
+                                >
+                                    Оформить заказ
+                                </Button>
+                            </Stack>
                         </form>
-                    </div>
+                    </Stack>
+                </Grid.Col>
 
-                    <div className="cart__right">
-                        <div className="cart__products">
-                            <CartList title={"Корзина"} onQuantityChange={recalculateTotal} />
-                        </div>
-                        <div className="cart__total">
-                            <div className="cart__total--item">
-                                Итоговая цена со скидкой: {formatCurrency(finalPrice)}
-                            </div>
-                            {giftData && (
-                                <div className="cart__discount">
-                                    {totalPrice > giftData.amount ? (
-                                        <b>
-                                            <b style={{color: 'red'}}>{formatCurrency(giftData.amount)}</b> оплачено сертификатом.
-                                            <br />
-                                            Осталось доплатить:  <b style={{color: 'red'}}>{formatCurrency(totalPrice - giftData.amount)}</b>
-                                        </b>
-                                    ) : (
-                                        <b>
-                                            <b style={{color: 'red'}}>{formatCurrency(totalPrice)}</b> оплачено сертификатом.
-                                            <br />
-                                            Остаток на сертификате:  <b style={{color: 'red'}}>{formatCurrency(giftData.amount - totalPrice)}</b>
-                                        </b>
-                                    )}
-                                </div>
-                            )}
+                {/* Right — cart contents + summary */}
+                <Grid.Col span={{ base: 12, md: 7 }}>
+                    <Stack gap="md">
+                        <CartList onQuantityChange={recalculateTotal} />
 
-                            {promoData && (
-                                <div className="cart__discount">
-                                    Применен промокод.
-                                    Скидка: {promoData.discountPercentage ? promoData.discountPercentage + "%" : formatCurrency(promoData.discountAmount)}
-                                </div>
-                            )}
+                        {/* Summary */}
+                        <Paper p="md" radius="lg" withBorder>
+                            <Stack gap="xs">
+                                <Group justify="space-between">
+                                    <Text fw={700} size="lg">Итого со скидкой:</Text>
+                                    <Text fw={700} size="xl" c="miko">{formatCurrency(finalPrice)}</Text>
+                                </Group>
 
-                            <div className="cart__gift">
-                                <div className="cart__gift-title">Подарок к заказу</div>
-                                <div>При каждом заказе подарок: <b>{EVERY_ORDER_GIFT}</b></div>
-                                {currentGiftTier ? (
-                                    <div>
-                                        По вашей сумме заказа в подарок идёт: <b>{currentGiftTier.gift}</b>
-                                    </div>
-                                ) : nextGiftTier ? (
-                                    <div>
-                                        Добавьте ещё <b>{formatCurrency(nextGiftTier.min - totalPrice)}</b> и получите в подарок: <b>{nextGiftTier.gift}</b>
-                                    </div>
-                                ) : null}
-                            </div>
+                                {giftData && (
+                                    <Paper p="sm" radius="md" bg="green.0" style={{ border: '1px solid var(--mantine-color-green-3)' }}>
+                                        {totalPrice > giftData.amount ? (
+                                            <Text size="sm">
+                                                <Text span c="red" fw={700}>{formatCurrency(giftData.amount)}</Text> оплачено сертификатом.
+                                                Осталось доплатить: <Text span c="red" fw={700}>{formatCurrency(totalPrice - giftData.amount)}</Text>
+                                            </Text>
+                                        ) : (
+                                            <Text size="sm">
+                                                <Text span c="red" fw={700}>{formatCurrency(totalPrice)}</Text> оплачено сертификатом.
+                                                Остаток: <Text span c="red" fw={700}>{formatCurrency(giftData.amount - totalPrice)}</Text>
+                                            </Text>
+                                        )}
+                                    </Paper>
+                                )}
 
-                            <div className="cart__total--sub">
-                                Цена доставки по тарифу Яндекс.
-                                Доставка бесплатно при заказе от 20 000 тенге
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
+                                {promoData && (
+                                    <Text size="sm" c="green">
+                                        Промокод: скидка {promoData.discountPercentage ? `${promoData.discountPercentage}%` : formatCurrency(promoData.discountAmount)}
+                                    </Text>
+                                )}
+
+                                <Paper p="sm" radius="md" bg="yellow.0" style={{ border: '1px solid var(--mantine-color-yellow-3)' }}>
+                                    <Text fw={600} size="sm">🎁 Подарок к заказу</Text>
+                                    <Text size="sm">При каждом заказе: <Text span fw={700}>{EVERY_ORDER_GIFT}</Text></Text>
+                                    {currentGiftTier ? (
+                                        <Text size="sm" mt={4}>По вашей сумме: <Text span fw={700}>{currentGiftTier.gift}</Text></Text>
+                                    ) : nextGiftTier ? (
+                                        <Text size="sm" mt={4}>
+                                            Добавьте ещё <Text span fw={700}>{formatCurrency(nextGiftTier.min - totalPrice)}</Text> и получите: <Text span fw={700}>{nextGiftTier.gift}</Text>
+                                        </Text>
+                                    ) : null}
+                                </Paper>
+
+                                <Text size="xs" c="dimmed">
+                                    Доставка по тарифу Яндекс. Бесплатно при заказе от 20 000 ₸
+                                </Text>
+                            </Stack>
+                        </Paper>
+                    </Stack>
+                </Grid.Col>
+            </Grid>
+        </Box>
     );
 };

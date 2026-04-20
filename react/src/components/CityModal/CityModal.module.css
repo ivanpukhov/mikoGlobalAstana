@@ -1,0 +1,17 @@
+.cityItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--mantine-radius-md);
+    transition: background 0.15s ease;
+    cursor: pointer;
+}
+
+.cityItem:hover {
+    background: var(--mantine-color-gray-1);
+}
+
+.cityItem[data-active] {
+    background: var(--mantine-color-miko-0);
+}

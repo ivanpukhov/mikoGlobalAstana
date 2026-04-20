@@ -1,78 +1,131 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Select, Spin } from "antd";
-import api from "../../api/api";
-
-const { Option } = Select;
+import { useEffect, useState } from 'react';
+import {
+    Button,
+    Loader,
+    Modal,
+    ScrollArea,
+    Stack,
+    Text,
+    TextInput,
+    UnstyledButton,
+} from '@mantine/core';
+import { IconMapPin, IconSearch } from '@tabler/icons-react';
+import api from '../../api/api';
+import classes from './CityModal.module.css';
 
 export const CityModal = ({ open, onClose, onCitySelect }) => {
     const [cities, setCities] = useState([]);
-    const [selectedCity, setSelectedCity] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState('');
+    const [selected, setSelected] = useState(null);
 
     useEffect(() => {
-        const fetchCities = async () => {
-            try {
-                setLoading(true);
-                const response = await api.get("/cities");
-                if (response.data && response.data.length > 0) {
-                    setCities(response.data);
-                } else {
-                    console.error("Данные отсутствуют: ", response.data);
-                }
-            } catch (error) {
-                console.error("Ошибка при получении городов:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!open) return;
 
-        if (open) fetchCities();
+        let cancelled = false;
+        setLoading(true);
+
+        try {
+            const savedCity = JSON.parse(localStorage.getItem('selectedCity') || 'null');
+            setSelected(savedCity);
+        } catch {
+            setSelected(null);
+        }
+
+        api.get('/cities')
+            .then(({ data }) => {
+                if (!cancelled && Array.isArray(data)) {
+                    setCities(data);
+                }
+            })
+            .catch((err) => console.error('Ошибка при загрузке городов:', err))
+            .finally(() => {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
     }, [open]);
 
-    const handleCityChange = (value) => {
-        const city = cities.find((c) => c.id === value);
-        setSelectedCity(city);
-    };
-
-    const handleOk = () => {
-        if (selectedCity) {
-            onCitySelect(selectedCity);
-            onClose();
-        }
-    };
+    const filtered = filter.trim()
+        ? cities.filter((city) => city.name.toLowerCase().includes(filter.trim().toLowerCase()))
+        : cities;
 
     return (
         <Modal
-            title="Выберите ваш город"
-            open={open}
-            onOk={handleOk}
-            okText="Сохранить"
-            cancelText="Отмена"
+            opened={open}
+            onClose={onClose}
+            title={
+                <Text fw={700} fz="lg">
+                    Выберите ваш город
+                </Text>
+            }
             centered
-            maskClosable={false} // Запрещает закрытие кликом вне окна
-            closable={false} // Убирает крестик для закрытия
-            okButtonProps={{
-                disabled: !selectedCity, // Отключить кнопку, если город не выбран
-                style: { backgroundColor: "#0CE3CB", color: "#fff" },
-            }}
+            closeOnClickOutside={false}
+            withCloseButton={false}
+            size="md"
         >
-            <Spin spinning={loading} tip="Загрузка городов...">
-                {!loading && (
-                    <Select
-                        showSearch
-                        placeholder="Выберите город"
-                        optionFilterProp="children"
-                        onChange={handleCityChange}
-                        style={{ width: "100%" }}
-                    >
-                        {cities.map((city) => (
-                            <Option key={city.id} value={city.id}>
-                                {city.name}
-                            </Option>
-                        ))}
-                    </Select>
+            <Stack gap="md">
+                <TextInput
+                    leftSection={<IconSearch size={16} />}
+                    placeholder="Поиск по городам"
+                    value={filter}
+                    onChange={(event) => setFilter(event.currentTarget.value)}
+                />
+
+                {loading ? (
+                    <Stack align="center" py="xl">
+                        <Loader color="miko" />
+                        <Text size="sm" c="dimmed">
+                            Загружаем города...
+                        </Text>
+                    </Stack>
+                ) : (
+                    <ScrollArea.Autosize mah={320}>
+                        <Stack gap={4}>
+                            {filtered.map((city) => {
+                                const isActive = selected?.id === city.id;
+
+                                return (
+                                    <UnstyledButton
+                                        key={city.id}
+                                        className={classes.cityItem}
+                                        data-active={isActive || undefined}
+                                        onClick={() => setSelected(city)}
+                                    >
+                                        <IconMapPin
+                                            size={16}
+                                            color={
+                                                isActive
+                                                    ? 'var(--mantine-color-miko-7)'
+                                                    : 'var(--mantine-color-gray-6)'
+                                            }
+                                        />
+                                        <Text fw={isActive ? 700 : 500}>{city.name}</Text>
+                                    </UnstyledButton>
+                                );
+                            })}
+                            {filtered.length === 0 && (
+                                <Text ta="center" c="dimmed" py="md">
+                                    Ничего не найдено
+                                </Text>
+                            )}
+                        </Stack>
+                    </ScrollArea.Autosize>
                 )}
-            </Spin>
+
+                <Button
+                    fullWidth
+                    color="miko"
+                    disabled={!selected || loading}
+                    onClick={() => selected && onCitySelect(selected)}
+                >
+                    Сохранить
+                </Button>
+            </Stack>
         </Modal>
     );
 };

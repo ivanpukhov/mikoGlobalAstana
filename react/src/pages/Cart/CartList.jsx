@@ -10,13 +10,25 @@ export const CartList = ({ onQuantityChange }) => {
             const products = Object.values(cart);
             setCartProducts(products);
         };
+
         loadCart();
+
+        window.addEventListener("cart:changed", loadCart);
+        window.addEventListener("storage", loadCart);
+
+        return () => {
+            window.removeEventListener("cart:changed", loadCart);
+            window.removeEventListener("storage", loadCart);
+        };
     }, []);
 
     const handleQuantityChange = (productId, newQuantity) => {
-        const updatedCart = cartProducts.map(product =>
-            product.id === productId ? { ...product, quantity: newQuantity } : product
-        );
+        const updatedCart = cartProducts
+            .map(product =>
+                product.id === productId ? { ...product, quantity: newQuantity } : product
+            )
+            .filter(product => (product.quantity || 0) > 0);
+
         setCartProducts(updatedCart);
 
         const cartObject = updatedCart.reduce((acc, product) => {

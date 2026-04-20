@@ -1,128 +1,148 @@
-import React, { useState, useEffect } from "react";
-import { Layout, Menu, Select, Drawer, Button, Typography } from "antd";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from 'react';
 import {
-    MenuOutlined,
-    ClockCircleOutlined,
-    UserOutlined,
-    TagsOutlined,
-    ShoppingCartOutlined,
-    BarChartOutlined,
-    HomeOutlined,
-    GiftOutlined,
-    LogoutOutlined,
-    BellOutlined,
-} from "@ant-design/icons";
-import api from "../api/api";
-import logo from "../images/logo-admin.svg";
+    AppShell,
+    Avatar,
+    Badge,
+    Burger,
+    Group,
+    NavLink,
+    Select,
+    Text,
+    Title,
+    UnstyledButton,
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import {
+    IconChartBar,
+    IconBell,
+    IconBuildingStore,
+    IconGift,
+    IconHome,
+    IconLogout,
+    IconMapPin,
+    IconShoppingCart,
+    IconTag,
+    IconTicket,
+    IconUsers,
+} from '@tabler/icons-react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import api from '../api/api';
+import logo from '../images/logo-admin.svg';
 
-const { Header, Content, Sider } = Layout;
-const { Option } = Select;
-const { Text } = Typography;
+const NAV_ITEMS = [
+    { to: '/admin/products',                icon: IconBuildingStore, label: 'Товары' },
+    { to: '/admin/cities',                  icon: IconMapPin,        label: 'Города' },
+    { to: '/admin/orders',                  icon: IconShoppingCart,  label: 'Заказы' },
+    { to: '/admin/statistics',              icon: IconChartBar,      label: 'Статистика' },
+    { to: '/admin/users',                   icon: IconUsers,         label: 'Пользователи' },
+    { to: '/admin/promocodes',              icon: IconTag,           label: 'Промокоды' },
+    { to: '/admin/gift-certificates',       icon: IconGift,          label: 'Подарочные серт.' },
+    { to: '/admin/purchased-certificates',  icon: IconTicket,        label: 'Купленные серт.' },
+    { to: '/admin/notifications',           icon: IconBell,          label: 'Уведомления' },
+];
 
 const AdminLayout = () => {
+    const [opened, { toggle, close }] = useDisclosure(false);
     const [cities, setCities] = useState([]);
-    const [selectedCity, setSelectedCity] = useState(localStorage.getItem("adminCity") || "all");
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    const [menuVisible, setMenuVisible] = useState(false);
+    const [selectedCity, setSelectedCity] = useState(localStorage.getItem('adminCity') || 'all');
     const [currentTime, setCurrentTime] = useState(new Date());
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
-    const adminName = localStorage.getItem("adminName");
+    const location = useLocation();
+    const token = localStorage.getItem('token');
+    const adminName = localStorage.getItem('adminName');
 
     useEffect(() => {
-        if (!token) {
-            navigate("/admin/login");
-        }
-        fetchCities();
+        if (!token) navigate('/admin/login');
+        api.get('/cities')
+            .then(({ data }) => setCities(data))
+            .catch(console.error);
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-        window.addEventListener("resize", handleResize);
-        return () => {
-            clearInterval(timer);
-            window.removeEventListener("resize", handleResize);
-        };
+        return () => clearInterval(timer);
     }, [token, navigate]);
 
-    const fetchCities = async () => {
-        try {
-            const { data } = await api.get("/cities");
-            setCities(data);
-        } catch (error) {
-            console.error("Ошибка загрузки городов:", error);
-        }
-    };
-
-    const handleResize = () => {
-        setIsMobile(window.innerWidth <= 768);
-    };
-
-    const handleCityChange = (cityId) => {
-        setSelectedCity(cityId);
-        localStorage.setItem("adminCity", cityId);
+    const handleCityChange = (value) => {
+        setSelectedCity(value);
+        localStorage.setItem('adminCity', value);
         window.location.reload();
     };
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("adminName");
-        navigate("/admin/login");
+        localStorage.removeItem('token');
+        localStorage.removeItem('adminName');
+        navigate('/admin/login');
     };
 
-    const sidebarItems = [
-        { key: "1", icon: <ShoppingCartOutlined />, label: <Link to="/admin/products">Товары</Link> },
-        { key: "2", icon: <HomeOutlined />, label: <Link to="/admin/cities">Города</Link> },
-        { key: "3", icon: <ShoppingCartOutlined />, label: <Link to="/admin/orders">Заказы</Link> },
-        { key: "4", icon: <BarChartOutlined />, label: <Link to="/admin/statistics">Статистика</Link> },
-        { key: "5", icon: <UserOutlined />, label: <Link to="/admin/users">Пользователи</Link> },
-        { key: "6", icon: <TagsOutlined />, label: <Link to="/admin/promocodes">Промокоды</Link> },
-        { key: "8", icon: <GiftOutlined />, label: <Link to="/admin/gift-certificates">Подарочные сертификаты</Link> },
-        { key: "9", icon: <GiftOutlined />, label: <Link to="/admin/purchased-certificates">Купленные сертификаты</Link> },
-        { key: "10", icon: <BellOutlined />, label: <Link to="/admin/notifications">Уведомления</Link> },
-        { key: "7", icon: <LogoutOutlined />, label: <Button type="link" onClick={handleLogout}>Выход</Button> },
+    const cityOptions = [
+        { value: 'all', label: 'Все города' },
+        ...cities.map((c) => ({ value: c.id.toString(), label: c.name })),
     ];
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
-            {!isMobile && (
-                <Sider collapsible width={220} style={{ background: "#001529" }}>
-                    <Menu theme="dark" mode="inline" items={sidebarItems} />
-                </Sider>
-            )}
-            {isMobile && (
-                <Drawer
-                    placement="left"
-                    closable
-                    onClose={() => setMenuVisible(false)}
-                    open={menuVisible}
-                    bodyStyle={{ padding: 0 }}
-                >
-                    <Menu theme="dark" mode="inline" items={sidebarItems} />
-                </Drawer>
-            )}
-            <Layout>
-                <Header style={{ display: "flex", justifyContent: "space-between", padding: "0 16px", background: "#f0f2f5", color: "#000" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        {isMobile && <Button icon={<MenuOutlined />} type="text" onClick={() => setMenuVisible(true)} />}
-                        <img src={logo} alt="Логотип" style={{ height: "40px", marginRight: "16px" }} />
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                        <ClockCircleOutlined style={{ color: "#1890ff" }} />
-                        <Text style={{ color: "#000" }}>{currentTime.toLocaleTimeString()}</Text>
-                        <UserOutlined style={{ color: "#1890ff" }} />
-                        <Text style={{ color: "#000" }}>Привет, {adminName || "Админ"}!</Text>
-                        <Select value={selectedCity} onChange={handleCityChange} style={{ width: "200px" }}>
-                            <Option value="all">Все города</Option>
-                            {cities.map((city) => (
-                                <Option key={city.id} value={city.id.toString()}>{city.name}</Option>
-                            ))}
-                        </Select>
-                    </div>
-                </Header>
-                <Content style={{ margin: "16px", padding: isMobile ? "8px" : "24px" }}>
-                    <Outlet />
-                </Content>
-            </Layout>
-        </Layout>
+        <AppShell
+            header={{ height: 60 }}
+            navbar={{ width: 220, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+            padding="md"
+        >
+            <AppShell.Header>
+                <Group h="100%" px="md" justify="space-between">
+                    <Group>
+                        <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+                        <img src={logo} alt="Логотип" style={{ height: 36 }} />
+                    </Group>
+
+                    <Group gap="sm">
+                        <Text size="sm" c="dimmed">{currentTime.toLocaleTimeString('ru-RU')}</Text>
+                        <Avatar color="miko" radius="xl" size="sm">
+                            {(adminName || 'А')[0].toUpperCase()}
+                        </Avatar>
+                        <Text size="sm" fw={500} visibleFrom="xs">Привет, {adminName || 'Админ'}!</Text>
+                        <Select
+                            value={selectedCity}
+                            onChange={handleCityChange}
+                            data={cityOptions}
+                            size="xs"
+                            w={160}
+                            radius="md"
+                        />
+                    </Group>
+                </Group>
+            </AppShell.Header>
+
+            <AppShell.Navbar p="xs">
+                <AppShell.Section grow>
+                    {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+                        <NavLink
+                            key={to}
+                            component={Link}
+                            to={to}
+                            label={label}
+                            leftSection={<Icon size={18} />}
+                            active={location.pathname.startsWith(to)}
+                            color="miko"
+                            variant="light"
+                            radius="md"
+                            mb={2}
+                            onClick={close}
+                        />
+                    ))}
+                </AppShell.Section>
+
+                <AppShell.Section>
+                    <NavLink
+                        label="Выход"
+                        leftSection={<IconLogout size={18} />}
+                        color="red"
+                        variant="light"
+                        radius="md"
+                        onClick={handleLogout}
+                    />
+                </AppShell.Section>
+            </AppShell.Navbar>
+
+            <AppShell.Main>
+                <Outlet />
+            </AppShell.Main>
+        </AppShell>
     );
 };
 

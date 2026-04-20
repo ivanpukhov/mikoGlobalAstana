@@ -4,25 +4,46 @@ import {
     Badge,
     Button,
     Card,
-    Col,
     Divider,
-    Empty,
-    Form,
-    Input,
-    Row,
-    Space,
-    Spin,
-    Typography,
-    message,
-} from 'antd';
-import { CheckCircleOutlined, QrcodeOutlined, ReloadOutlined, SaveOutlined } from '@ant-design/icons';
+    Grid,
+    Group,
+    Loader,
+    PasswordInput,
+    SimpleGrid,
+    Stack,
+    Text,
+    Textarea,
+    TextInput,
+    Title,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import {
+    IconCheck,
+    IconDeviceFloppy,
+    IconQrcode,
+    IconRefresh,
+} from '@tabler/icons-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../api/api';
-
-const { Text, Title } = Typography;
+import { EmptyState } from '../components/ui';
 
 const NotificationsPage = () => {
-    const [form] = Form.useForm();
+    const form = useForm({
+        initialValues: {
+            apiUrl: '',
+            mediaUrl: '',
+            idInstance: '',
+            apiTokenInstance: '',
+        },
+        validate: {
+            apiUrl: (v) => (v.trim() ? null : 'Укажите apiUrl'),
+            mediaUrl: (v) => (v.trim() ? null : 'Укажите mediaUrl'),
+            idInstance: (v) => (v.trim() ? null : 'Укажите idInstance'),
+            apiTokenInstance: (v) => (v.trim() ? null : 'Укажите apiTokenInstance'),
+        },
+    });
+
     const [loading, setLoading] = useState(true);
     const [savingSettings, setSavingSettings] = useState(false);
     const [checkingState, setCheckingState] = useState(false);
@@ -50,13 +71,12 @@ const NotificationsPage = () => {
             const authorized = Boolean(data?.isAuthorized);
             setInstanceState(nextState);
             setIsAuthorized(authorized);
-
             if (authorized) {
                 setQrText('');
                 stopPolling();
             }
         } catch (error) {
-            message.error(error.response?.data?.error || 'Не удалось проверить состояние инстанса');
+            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось проверить состояние инстанса' });
         } finally {
             setCheckingState(false);
         }
@@ -70,30 +90,25 @@ const NotificationsPage = () => {
                 api.get('/notifications/templates'),
             ]);
 
-            form.setFieldsValue({
+            form.setValues({
                 apiUrl: settingsResp.data.apiUrl,
                 mediaUrl: settingsResp.data.mediaUrl,
                 idInstance: settingsResp.data.idInstance,
                 apiTokenInstance: settingsResp.data.apiTokenInstance,
             });
 
-            setTemplates(
-                templatesResp.data.map((item) => ({
-                    ...item,
-                    draftText: item.text,
-                }))
-            );
+            setTemplates(templatesResp.data.map((item) => ({ ...item, draftText: item.text })));
 
             if (settingsResp.data.instanceState) {
                 setInstanceState(settingsResp.data.instanceState);
                 setIsAuthorized(Boolean(settingsResp.data.isAuthorized));
             }
         } catch (error) {
-            message.error(error.response?.data?.error || 'Ошибка загрузки данных уведомлений');
+            notifications.show({ color: 'red', message: error.response?.data?.error || 'Ошибка загрузки данных уведомлений' });
         } finally {
             setLoading(false);
         }
-    }, [form]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         loadData();
@@ -101,14 +116,15 @@ const NotificationsPage = () => {
     }, [loadData, stopPolling]);
 
     const saveSettings = async () => {
-        const values = await form.validateFields();
+        const validation = form.validate();
+        if (validation.hasErrors) return false;
         setSavingSettings(true);
         try {
-            await api.put('/notifications/settings', values);
-            message.success('Настройки Green API сохранены');
+            await api.put('/notifications/settings', form.values);
+            notifications.show({ color: 'teal', message: 'Настройки Green API сохранены' });
             return true;
         } catch (error) {
-            message.error(error.response?.data?.error || 'Не удалось сохранить настройки');
+            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось сохранить настройки' });
             return false;
         } finally {
             setSavingSettings(false);
@@ -117,55 +133,43 @@ const NotificationsPage = () => {
 
     const startAuthorization = async () => {
         const saved = await saveSettings();
-        if (!saved) {
-            return;
-        }
+        if (!saved) return;
 
         setQrLoading(true);
         try {
             const { data } = await api.post('/notifications/qr');
+
             if (data?.type === 'alreadyLogged' || data?.type === 'authorized') {
                 setIsAuthorized(true);
                 setInstanceState('authorized');
                 setQrText('');
                 stopPolling();
-                message.success('Инстанс уже авторизован');
+                notifications.show({ color: 'teal', message: 'Инстанс уже авторизован' });
                 return;
             }
 
             if (data?.type === 'qrCode') {
                 const qrMessage = String(data?.message || data?.qrCode || '').trim();
-                if (!qrMessage) {
-                    message.warning('QR пока недоступен. Проверьте состояние инстанса.');
-                    return;
-                }
-
+                if (!qrMessage) { notifications.show({ color: 'yellow', message: 'QR пока недоступен. Проверьте состояние инстанса.' }); return; }
                 setQrRenderMode('image');
                 setQrText(`data:image/png;base64,${qrMessage.replace(/\s+/g, '')}`);
                 setIsAuthorized(false);
                 stopPolling();
-                pollerRef.current = setInterval(() => {
-                    checkState();
-                }, 5000);
+                pollerRef.current = setInterval(checkState, 5000);
                 return;
             }
 
             const qrValueRaw = String(data?.qrCode || data?.message || '').trim();
-
-            if (!qrValueRaw) {
-                message.warning('QR пока недоступен. Проверьте состояние инстанса.');
-                return;
-            }
+            if (!qrValueRaw) { notifications.show({ color: 'yellow', message: 'QR пока недоступен. Проверьте состояние инстанса.' }); return; }
 
             const normalized = qrValueRaw.replace(/\s+/g, '');
             const isDataImage = /^data:image\/[a-zA-Z+.-]+;base64,/.test(normalized);
             const isLongBase64 = normalized.length > 1200 && /^[A-Za-z0-9+/=]+$/.test(normalized);
-            const isTooLongForQr = qrValueRaw.length > 1200;
 
             if (isDataImage) {
                 setQrRenderMode('image');
                 setQrText(normalized);
-            } else if (isLongBase64 || isTooLongForQr) {
+            } else if (isLongBase64 || qrValueRaw.length > 1200) {
                 setQrRenderMode('image');
                 setQrText(`data:image/png;base64,${normalized}`);
             } else {
@@ -174,13 +178,10 @@ const NotificationsPage = () => {
             }
 
             setIsAuthorized(false);
-
             stopPolling();
-            pollerRef.current = setInterval(() => {
-                checkState();
-            }, 5000);
+            pollerRef.current = setInterval(checkState, 5000);
         } catch (error) {
-            message.error(error.response?.data?.error || 'Не удалось получить QR код');
+            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось получить QR код' });
         } finally {
             setQrLoading(false);
         }
@@ -197,126 +198,155 @@ const NotificationsPage = () => {
             setTemplates((prev) =>
                 prev.map((item) => (item.key === template.key ? { ...item, text: data.text, draftText: data.text } : item))
             );
-            message.success(`Шаблон «${template.name}» сохранён`);
+            notifications.show({ color: 'teal', message: `Шаблон «${template.name}» сохранён` });
         } catch (error) {
-            message.error(error.response?.data?.error || 'Ошибка сохранения шаблона');
+            notifications.show({ color: 'red', message: error.response?.data?.error || 'Ошибка сохранения шаблона' });
         } finally {
             setSavingTemplateKey('');
         }
     };
 
-    const stateColor = isAuthorized ? 'green' : instanceState === 'notAuthorized' ? 'red' : 'gold';
+    const stateColor = isAuthorized ? 'teal' : instanceState === 'notAuthorized' ? 'red' : 'yellow';
 
     if (loading) {
-        return <Spin size="large" />;
+        return <Group justify="center" py="xl"><Loader size="lg" color="miko" /></Group>;
     }
 
     return (
-        <Space direction="vertical" size={20} style={{ width: '100%' }}>
-            <Card>
-                <Space direction="vertical" size={16} style={{ width: '100%' }}>
-                    <Title level={4} style={{ margin: 0 }}>Уведомления и Green API</Title>
-                    <Text type="secondary">Заполните параметры подключения, проверьте состояние инстанса и выполните авторизацию по QR.</Text>
+        <Stack gap="lg">
+            {/* Green API Settings */}
+            <Card radius="xl" shadow="sm" p="xl" withBorder>
+                <Stack gap="md">
+                    <Title order={4} fw={700}>Уведомления и Green API</Title>
+                    <Text c="dimmed" size="sm">
+                        Заполните параметры подключения, проверьте состояние инстанса и выполните авторизацию по QR.
+                    </Text>
 
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} md={12}>
-                            <Form form={form} layout="vertical">
-                                <Form.Item name="apiUrl" label="apiUrl" rules={[{ required: true, message: 'Укажите apiUrl' }]}>
-                                    <Input placeholder="https://api.green-api.com" />
-                                </Form.Item>
-                                <Form.Item name="mediaUrl" label="mediaUrl" rules={[{ required: true, message: 'Укажите mediaUrl' }]}>
-                                    <Input placeholder="https://media.green-api.com" />
-                                </Form.Item>
-                                <Form.Item name="idInstance" label="idInstance" rules={[{ required: true, message: 'Укажите idInstance' }]}>
-                                    <Input placeholder="7103..." />
-                                </Form.Item>
-                                <Form.Item name="apiTokenInstance" label="apiTokenInstance" rules={[{ required: true, message: 'Укажите apiTokenInstance' }]}>
-                                    <Input.Password placeholder="api token" />
-                                </Form.Item>
+                    <Grid gutter="xl">
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                            <form>
+                                <Stack gap="sm">
+                                    <TextInput label="apiUrl" placeholder="https://api.green-api.com" {...form.getInputProps('apiUrl')} radius="md" />
+                                    <TextInput label="mediaUrl" placeholder="https://media.green-api.com" {...form.getInputProps('mediaUrl')} radius="md" />
+                                    <TextInput label="idInstance" placeholder="7103..." {...form.getInputProps('idInstance')} radius="md" />
+                                    <PasswordInput label="apiTokenInstance" placeholder="api token" {...form.getInputProps('apiTokenInstance')} radius="md" />
 
-                                <Space wrap>
-                                    <Button icon={<SaveOutlined />} type="primary" loading={savingSettings} onClick={saveSettings}>
-                                        Сохранить
-                                    </Button>
-                                    <Button icon={<ReloadOutlined />} loading={checkingState} onClick={checkState}>
-                                        Проверить состояние
-                                    </Button>
-                                    <Button icon={<QrcodeOutlined />} loading={qrLoading} onClick={startAuthorization}>
-                                        Авторизация
-                                    </Button>
-                                </Space>
-                            </Form>
-                        </Col>
+                                    <Group mt="sm" gap="sm" wrap="wrap">
+                                        <Button
+                                            leftSection={<IconDeviceFloppy size={16} />}
+                                            color="miko"
+                                            radius="md"
+                                            loading={savingSettings}
+                                            onClick={saveSettings}
+                                        >
+                                            Сохранить
+                                        </Button>
+                                        <Button
+                                            leftSection={<IconRefresh size={16} />}
+                                            variant="default"
+                                            radius="md"
+                                            loading={checkingState}
+                                            onClick={checkState}
+                                        >
+                                            Проверить состояние
+                                        </Button>
+                                        <Button
+                                            leftSection={<IconQrcode size={16} />}
+                                            variant="default"
+                                            radius="md"
+                                            loading={qrLoading}
+                                            onClick={startAuthorization}
+                                        >
+                                            Авторизация
+                                        </Button>
+                                    </Group>
+                                </Stack>
+                            </form>
+                        </Grid.Col>
 
-                        <Col xs={24} md={12}>
-                            <Space direction="vertical" size={16} style={{ width: '100%', alignItems: 'center' }}>
-                                <Badge color={stateColor} text={`Состояние: ${instanceState || 'unknown'}`} />
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                            <Stack align="center" gap="md">
+                                <Badge color={stateColor} size="lg" variant="light">
+                                    Состояние: {instanceState || 'unknown'}
+                                </Badge>
+
                                 {isAuthorized && (
                                     <Alert
-                                        type="success"
-                                        showIcon
-                                        icon={<CheckCircleOutlined />}
-                                        message="Инстанс авторизован"
+                                        color="teal"
+                                        radius="md"
+                                        icon={<IconCheck size={16} />}
+                                        title="Инстанс авторизован"
                                     />
                                 )}
 
                                 {!isAuthorized && qrText && (
-                                    <Card title="QR для WhatsApp" style={{ width: '100%', textAlign: 'center' }}>
-                                        {qrRenderMode === 'image' ? (
-                                            <img
-                                                src={qrText}
-                                                alt="QR code"
-                                                style={{ maxWidth: '100%', width: 260, height: 260, objectFit: 'contain' }}
-                                            />
-                                        ) : (
-                                            <QRCodeSVG value={qrText} size={240} includeMargin />
-                                        )}
-                                        <Divider />
-                                        <Text type="secondary">Статус проверяется каждые 5 секунд</Text>
+                                    <Card withBorder radius="lg" p="md" ta="center">
+                                        <Stack align="center" gap="sm">
+                                            <Text fw={600}>QR для WhatsApp</Text>
+                                            {qrRenderMode === 'image' ? (
+                                                <img
+                                                    src={qrText}
+                                                    alt="QR code"
+                                                    style={{ maxWidth: '100%', width: 260, height: 260, objectFit: 'contain' }}
+                                                />
+                                            ) : (
+                                                <QRCodeSVG value={qrText} size={240} includeMargin />
+                                            )}
+                                            <Divider w="100%" />
+                                            <Text size="sm" c="dimmed">Статус проверяется каждые 5 секунд</Text>
+                                        </Stack>
                                     </Card>
                                 )}
-                            </Space>
-                        </Col>
-                    </Row>
-                </Space>
+                            </Stack>
+                        </Grid.Col>
+                    </Grid>
+                </Stack>
             </Card>
 
-            <Card>
-                <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                    <Title level={4} style={{ margin: 0 }}>Шаблоны сообщений</Title>
-                    <Alert
-                        type="info"
-                        showIcon
-                        message="Используйте переменные в формате {text}, например {customerName}, {orderId}, {status}."
-                    />
+            {/* Message Templates */}
+            <Card radius="xl" shadow="sm" p="xl" withBorder>
+                <Stack gap="md">
+                    <Title order={4} fw={700}>Шаблоны сообщений</Title>
+                    <Alert color="blue" radius="md">
+                        Используйте переменные в формате {'{text}'}, например {'{customerName}'}, {'{orderId}'}, {'{status}'}.
+                    </Alert>
 
-                    {templates.length === 0 && <Empty description="Шаблоны пока не найдены" />}
-
-                    <Row gutter={[16, 16]}>
-                        {templates.map((template) => (
-                            <Col xs={24} lg={12} key={template.key}>
-                                <Card title={template.name} size="small" extra={<Text type="secondary">{template.key}</Text>}>
-                                    <Space direction="vertical" size={10} style={{ width: '100%' }}>
-                                        <Input.TextArea
+                    {templates.length === 0 ? (
+                        <EmptyState title="Шаблоны пока не найдены" />
+                    ) : (
+                        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
+                            {templates.map((template) => (
+                                <Card key={template.key} withBorder radius="lg" p="md">
+                                    <Stack gap="sm">
+                                        <Group justify="space-between">
+                                            <Text fw={600}>{template.name}</Text>
+                                            <Text size="xs" c="dimmed">{template.key}</Text>
+                                        </Group>
+                                        <Textarea
                                             value={template.draftText}
                                             onChange={(e) => updateDraft(template.key, e.target.value)}
-                                            autoSize={{ minRows: 6, maxRows: 14 }}
+                                            minRows={6}
+                                            maxRows={14}
+                                            radius="md"
+                                            autosize
                                         />
                                         <Button
-                                            type="primary"
+                                            color="miko"
+                                            radius="md"
+                                            size="sm"
                                             loading={savingTemplateKey === template.key}
                                             onClick={() => saveTemplate(template)}
                                         >
                                             Сохранить шаблон
                                         </Button>
-                                    </Space>
+                                    </Stack>
                                 </Card>
-                            </Col>
-                        ))}
-                    </Row>
-                </Space>
+                            ))}
+                        </SimpleGrid>
+                    )}
+                </Stack>
             </Card>
-        </Space>
+        </Stack>
     );
 };
 

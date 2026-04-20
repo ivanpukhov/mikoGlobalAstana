@@ -1,229 +1,205 @@
-import React, { useEffect, useState } from "react";
-import { Table, Select, Row, Col, Button, Space } from "antd";
-import { FilterOutlined, CalendarOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
-import api from "../api/api";
-import moment from "moment";
-import useBreakpoint from "antd/lib/grid/hooks/useBreakpoint";
-import { formatCurrency } from "../utils/formatters";
+import { useEffect, useMemo, useState } from 'react';
+import {
+    Badge,
+    Button,
+    Group,
+    Loader,
+    Select,
+    Stack,
+    Table,
+    Text,
+    Title,
+} from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import api from '../api/api';
+import { formatCurrency } from '../utils/formatters';
 
-const { Option } = Select;
+const STATUS_BUTTONS = [
+    { label: 'Все', value: 'all' },
+    { label: 'Новый', value: null },
+    { label: 'В обработке', value: 'в обработке' },
+    { label: 'Выполнен', value: 'выполнен' },
+    { label: 'Отклонён', value: 'отклонен' },
+];
+
+const PERIOD_BUTTONS = [
+    { label: 'Сегодня', value: 'today' },
+    { label: 'Вчера', value: 'yesterday' },
+    { label: 'Неделя', value: 'week' },
+    { label: 'Месяц', value: 'month' },
+    { label: 'Все', value: 'all' },
+];
+
+const statusColor = (s) => {
+    if (s === 'выполнен') return 'teal';
+    if (s === 'в обработке') return 'blue';
+    if (s === 'отклонен') return 'red';
+    return 'gray';
+};
 
 const OrdersPage = () => {
     const [allOrders, setAllOrders] = useState([]);
-    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [deliveryMethod, setDeliveryMethod] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState(null);
-    const [status, setStatus] = useState("all");
-    const [period, setPeriod] = useState("today");
+    const [status, setStatus] = useState('all');
+    const [period, setPeriod] = useState('today');
     const navigate = useNavigate();
-    const screens = useBreakpoint();
 
-    const selectedCity = localStorage.getItem("adminCity") || "all";
+    const selectedCity = localStorage.getItem('adminCity') || 'all';
 
-    const fetchOrders = async () => {
-        try {
-            const params = new URLSearchParams();
-            if (selectedCity !== "all") params.append("cityId", selectedCity);
-            const url = `/orders${params.toString() ? `?${params.toString()}` : ""}`;
-            const { data } = await api.get(url);
-            setAllOrders(data);
-        } catch (error) {
-            console.error("Ошибка загрузки заказов:", error);
-            setAllOrders([]);
-        }
-    };
+    useEffect(() => {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (selectedCity !== 'all') params.append('cityId', selectedCity);
+        const url = `/orders${params.toString() ? `?${params.toString()}` : ''}`;
+        api.get(url)
+            .then(({ data }) => setAllOrders(data))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [selectedCity]);
 
-    const filterOrders = () => {
+    const orders = useMemo(() => {
         let filtered = [...allOrders];
 
-        if (deliveryMethod) {
-            filtered = filtered.filter(order => order.deliveryMethod === deliveryMethod);
+        if (deliveryMethod) filtered = filtered.filter((o) => o.deliveryMethod === deliveryMethod);
+        if (paymentMethod) filtered = filtered.filter((o) => o.paymentMethod === paymentMethod);
+
+        if (status !== 'all') {
+            filtered = status === null
+                ? filtered.filter((o) => !o.status)
+                : filtered.filter((o) => o.status === status);
         }
-        if (paymentMethod) {
-            filtered = filtered.filter(order => order.paymentMethod === paymentMethod);
-        }
-        if (status && status !== "all") {
-            if (status === null) {
-                filtered = filtered.filter(order => !order.status);
-            } else {
-                filtered = filtered.filter(order => order.status === status);
-            }
-        }
-        if (period !== "all") {
-            const today = moment().startOf("day");
+
+        if (period !== 'all') {
+            const today = dayjs().startOf('day');
             const ranges = {
-                today: [today, today.clone().endOf("day")],
-                yesterday: [today.clone().subtract(1, "day"), today.clone().subtract(1, "day").endOf("day")],
-                week: [today.clone().subtract(6, "days"), today.clone().endOf("day")],
-                month: [today.clone().subtract(29, "days"), today.clone().endOf("day")],
+                today: [today, today.endOf('day')],
+                yesterday: [today.subtract(1, 'day'), today.subtract(1, 'day').endOf('day')],
+                week: [today.subtract(6, 'days'), today.endOf('day')],
+                month: [today.subtract(29, 'days'), today.endOf('day')],
             };
             const [start, end] = ranges[period];
-            filtered = filtered.filter(order => {
-                const created = moment(order.createdAt);
-                return created.isBetween(start, end, undefined, '[]');
+            filtered = filtered.filter((o) => {
+                const created = dayjs(o.createdAt);
+                return (created.isAfter(start) || created.isSame(start)) &&
+                    (created.isBefore(end) || created.isSame(end));
             });
         }
 
-        setOrders(filtered);
-    };
-
-    useEffect(() => {
-        fetchOrders();
-    }, [selectedCity]);
-
-    useEffect(() => {
-        filterOrders();
+        return filtered;
     }, [allOrders, deliveryMethod, paymentMethod, status, period]);
 
-    const getStatusLabel = (status) => {
-        if (!status) return "Новый";
-        if (status === "в обработке") return "В обработке";
-        if (status === "выполнен") return "Выполнен";
-        if (status === "отклонен") return "Отклонён";
-        return status;
-    };
-
-    const statusButtons = [
-        { label: "Все", value: "all" },
-        { label: "Новый", value: null },
-        { label: "В обработке", value: "в обработке" },
-        { label: "Выполнен", value: "выполнен" },
-        { label: "Отклонён", value: "отклонен" }
-    ];
-
-    const periodButtons = [
-        { label: "Сегодня", value: "today" },
-        { label: "Вчера", value: "yesterday" },
-        { label: "Неделя", value: "week" },
-        { label: "Месяц", value: "month" },
-        { label: "Все", value: "all" }
-    ];
-
-    const viewOrderDetails = (orderId) => {
-        navigate(`/admin/orders/${orderId}`);
-    };
-
-    const columns = screens.xs ? [
-        {
-            title: "Заказ",
-            key: "compact",
-            render: (_, record) => (
-                <div onClick={() => viewOrderDetails(record.id)}>
-                    <div><strong>{record.customerName || "Не указано"}</strong></div>
-                    <div>{record.customerPhone}</div>
-                    <div>{record.city?.name}</div>
-                    <div>{formatCurrency(record.totalAmount)}</div>
-                    <div>{moment(record.createdAt).format("DD.MM.YYYY")}</div>
-                    <div>{getStatusLabel(record.status)}</div>
-                </div>
-            )
-        }
-    ] : [
-        {
-            title: "Имя клиента",
-            dataIndex: "customerName",
-            key: "customerName",
-            render: (text, record) => (
-                <a onClick={() => viewOrderDetails(record.id)}>{text || "Не указано"}</a>
-            )
-        },
-        {
-            title: "Телефон",
-            dataIndex: "customerPhone",
-            key: "customerPhone"
-        },
-        {
-            title: "Город",
-            dataIndex: ["city", "name"],
-            key: "city"
-        },
-        {
-            title: "Сумма (₸)",
-            dataIndex: "totalAmount",
-            key: "totalAmount",
-            render: (amount) => formatCurrency(amount),
-        },
-        {
-            title: "Дата",
-            dataIndex: "createdAt",
-            key: "createdAt",
-            render: (text) => moment(text).format("DD.MM.YYYY")
-        },
-        {
-            title: "Статус",
-            dataIndex: "status",
-            key: "status",
-            render: (text) => getStatusLabel(text)
-        }
-    ];
-
     return (
-        <div className="orders-page-container">
-            <Row gutter={[16, 24]} className="filter-section">
-                <Col span={24} style={{ marginBottom: 8 }}>
-                    <h4 style={{ marginBottom: 8 }}><FilterOutlined /> Фильтр по статусу</h4>
-                    <Space wrap>
-                        {statusButtons.map(btn => (
-                            <Button
-                                key={btn.label}
-                                type={(btn.value === status || (btn.value === null && !status)) ? "primary" : "default"}
-                                onClick={() => setStatus(btn.value)}
-                            >
-                                {btn.label}
-                            </Button>
-                        ))}
-                    </Space>
-                </Col>
-                <Col span={24} style={{ marginBottom: 8 }}>
-                    <h4 style={{ marginBottom: 8 }}><CalendarOutlined /> Фильтр по дате</h4>
-                    <Space wrap>
-                        {periodButtons.map(btn => (
-                            <Button
-                                key={btn.value}
-                                type={period === btn.value ? "primary" : "default"}
-                                onClick={() => setPeriod(btn.value)}
-                            >
-                                {btn.label}
-                            </Button>
-                        ))}
-                    </Space>
-                </Col>
-                <Col xs={24} sm={12} md={8}>
-                    <Select
-                        placeholder="Способ доставки"
-                        value={deliveryMethod}
-                        onChange={setDeliveryMethod}
-                        style={{ width: "100%" }}
-                        allowClear
-                    >
-                        <Option value="delivery">Доставка</Option>
-                        <Option value="pickup">Самовывоз</Option>
-                    </Select>
-                </Col>
-                <Col xs={24} sm={12} md={8}>
-                    <Select
-                        placeholder="Способ оплаты"
-                        value={paymentMethod}
-                        onChange={setPaymentMethod}
-                        style={{ width: "100%" }}
-                        allowClear
-                    >
-                        <Option value="card">Карта</Option>
-                        <Option value="cash">Наличные</Option>
-                    </Select>
-                </Col>
-            </Row>
+        <Stack gap="md">
+            <Title order={3} fw={700}>Заказы</Title>
 
-            <Table
-                style={{ marginTop: 24 }}
-                dataSource={orders}
-                columns={columns}
-                rowKey="id"
-                pagination={{ pageSize: 10 }}
-                scroll={{ x: "max-content" }}
-            />
-        </div>
+            {/* Status filter */}
+            <Stack gap="xs">
+                <Text size="sm" fw={600} c="dimmed">Статус</Text>
+                <Group gap="xs" wrap="wrap">
+                    {STATUS_BUTTONS.map((btn) => (
+                        <Button
+                            key={btn.label}
+                            size="xs"
+                            radius="md"
+                            variant={status === btn.value || (btn.value === null && status === null) ? 'filled' : 'default'}
+                            color="miko"
+                            onClick={() => setStatus(btn.value)}
+                        >
+                            {btn.label}
+                        </Button>
+                    ))}
+                </Group>
+            </Stack>
+
+            {/* Period filter */}
+            <Stack gap="xs">
+                <Text size="sm" fw={600} c="dimmed">Период</Text>
+                <Group gap="xs" wrap="wrap">
+                    {PERIOD_BUTTONS.map((btn) => (
+                        <Button
+                            key={btn.value}
+                            size="xs"
+                            radius="md"
+                            variant={period === btn.value ? 'filled' : 'default'}
+                            color="miko"
+                            onClick={() => setPeriod(btn.value)}
+                        >
+                            {btn.label}
+                        </Button>
+                    ))}
+                </Group>
+            </Stack>
+
+            {/* Select filters */}
+            <Group gap="sm" wrap="wrap">
+                <Select
+                    placeholder="Способ доставки"
+                    value={deliveryMethod}
+                    onChange={setDeliveryMethod}
+                    clearable
+                    data={[
+                        { value: 'delivery', label: 'Доставка' },
+                        { value: 'pickup', label: 'Самовывоз' },
+                    ]}
+                    w={200}
+                    radius="md"
+                    size="sm"
+                />
+                <Select
+                    placeholder="Способ оплаты"
+                    value={paymentMethod}
+                    onChange={setPaymentMethod}
+                    clearable
+                    data={[
+                        { value: 'card', label: 'Карта' },
+                        { value: 'cash', label: 'Наличные' },
+                    ]}
+                    w={200}
+                    radius="md"
+                    size="sm"
+                />
+            </Group>
+
+            {loading ? (
+                <Group justify="center" py="xl"><Loader color="miko" /></Group>
+            ) : (
+                <Table striped highlightOnHover withTableBorder radius="md" style={{ overflowX: 'auto' }}>
+                    <Table.Thead>
+                        <Table.Tr>
+                            <Table.Th>Клиент</Table.Th>
+                            <Table.Th>Телефон</Table.Th>
+                            <Table.Th>Город</Table.Th>
+                            <Table.Th>Сумма</Table.Th>
+                            <Table.Th>Дата</Table.Th>
+                            <Table.Th>Статус</Table.Th>
+                        </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                        {orders.map((order) => (
+                            <Table.Tr
+                                key={order.id}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => navigate(`/admin/orders/${order.id}`)}
+                            >
+                                <Table.Td fw={600}>{order.customerName || 'Не указано'}</Table.Td>
+                                <Table.Td>{order.customerPhone}</Table.Td>
+                                <Table.Td>{order.city?.name || '—'}</Table.Td>
+                                <Table.Td>{formatCurrency(order.totalAmount)}</Table.Td>
+                                <Table.Td>{dayjs(order.createdAt).format('DD.MM.YYYY')}</Table.Td>
+                                <Table.Td>
+                                    <Badge color={statusColor(order.status)} variant="light" size="sm">
+                                        {order.status || 'Новый'}
+                                    </Badge>
+                                </Table.Td>
+                            </Table.Tr>
+                        ))}
+                    </Table.Tbody>
+                </Table>
+            )}
+        </Stack>
     );
 };
 

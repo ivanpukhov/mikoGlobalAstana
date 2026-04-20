@@ -1,132 +1,223 @@
+import {
+    ActionIcon,
+    Badge,
+    Box,
+    Burger,
+    Center,
+    Combobox,
+    Flex,
+    Group,
+    Input,
+    Paper,
+    Text,
+    useCombobox,
+    useMantineTheme,
+    rem,
+} from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import {
+    IconMapPin,
+    IconSearch,
+    IconShoppingCart,
+} from '@tabler/icons-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import api from '../../api/api';
+import { CityModal } from '../CityModal/CityModal';
 import logo from '../../images/logo.svg';
-import search from '../../images/search.svg';
-import searchMobile from '../../images/searchMobile.svg';
-import burger from '../../images/burger.svg';
-import favorite from '../../images/favorite.svg';
-import cart from '../../images/cart.svg';
 import styles from './Header.module.scss';
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import api from "../../api/api";
-import {CityModal} from "../CityModal/CityModal";
+
+function getCartCount() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '{}');
+    return Object.values(cart).reduce((sum, item) => sum + (item?.quantity || 0), 0);
+}
+
 export const Header = ({ selectedCity, onCityChange }) => {
+    const theme = useMantineTheme();
+    const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
+
     const [query, setQuery] = useState('');
     const [suggestions, setSuggestions] = useState([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const navigate = useNavigate();
-
     const [isCityModalOpen, setIsCityModalOpen] = useState(false);
+    const [cartCount, setCartCount] = useState(getCartCount);
 
-    const handleFavoriteClick = () => {
-        setIsCityModalOpen(true);
-    };
+    const navigate = useNavigate();
+    const combobox = useCombobox();
+    const inputRef = useRef(null);
 
-    const handleCitySelect = (city) => {
-        onCityChange(city);
-        setIsCityModalOpen(false);
-    };
+    // Re-read cart count on window focus so badge stays fresh after add-to-cart
+    useEffect(() => {
+        const refresh = () => setCartCount(getCartCount());
+        window.addEventListener('focus', refresh);
+        window.addEventListener('storage', refresh);
+        return () => {
+            window.removeEventListener('focus', refresh);
+            window.removeEventListener('storage', refresh);
+        };
+    }, []);
 
-    const fetchSuggestions = async (searchQuery) => {
+    const fetchSuggestions = async (value) => {
         try {
-            const response = await api.get(`/products/suggestions/?query=${searchQuery}`);
-            setSuggestions(response.data);
-        } catch (error) {
-            console.error("Error fetching suggestions:", error);
+            const res = await api.get(`/products/suggestions/?query=${value}`);
+            setSuggestions(res.data || []);
+            combobox.openDropdown();
+        } catch {
+            // silent
         }
     };
 
-    const handleInputChange = (e) => {
-        const value = e.target.value;
-        setQuery(value);
-        if (value.trim() !== '') {
-            fetchSuggestions(value);
-            setShowSuggestions(true);
+    const handleChange = (e) => {
+        const val = e.target.value;
+        setQuery(val);
+        if (val.trim()) {
+            fetchSuggestions(val);
         } else {
-            setShowSuggestions(false);
+            setSuggestions([]);
+            combobox.closeDropdown();
         }
-    };
-
-    const handleInputBlur = () => {
-        setTimeout(() => {
-            setShowSuggestions(false);
-        }, 500);
-    };
-
-    const handleSuggestionClick = () => {
-        setQuery('');
-        setShowSuggestions(false);
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && query.trim() !== '') {
+        if (e.key === 'Enter' && query.trim()) {
             navigate(`/search/${query}`);
-            setShowSuggestions(false);
+            combobox.closeDropdown();
         }
     };
 
+    const handleSelect = (val) => {
+        navigate(`/search/${val}`);
+        setQuery('');
+        combobox.closeDropdown();
+    };
+
+    const options = [
+        ...(query.trim()
+            ? [
+                  <Combobox.Option value={query} key="__raw__">
+                      <Group gap="xs">
+                          <IconSearch size={14} />
+                          <span>Искать «{query}»</span>
+                      </Group>
+                  </Combobox.Option>,
+              ]
+            : []),
+        ...suggestions.map((s) => (
+            <Combobox.Option value={s} key={s}>
+                {s}
+            </Combobox.Option>
+        )),
+    ];
+
     return (
         <header className={styles.header}>
-            <div className={`${styles.header__block} container`}>
-                <Link to='/' className={styles.header__logo}>
-                    <img src={logo} alt=""/>
+            <div className={`${styles.header__inner} container`}>
+                {/* Logo */}
+                <Link to="/" className={styles.header__logo}>
+                    <img src={logo} alt="Miko" />
                 </Link>
-                <Link to={'/categories'} className={styles.header__catalog}>
-                    <img src={burger} alt=""/>
-                    <span>Каталог</span>
-                </Link>
-                <label htmlFor="search" className={styles.header__search}>
-                    <img src={search} alt=""/>
-                    <img src={searchMobile} alt=""/>
-                    <input
-                        type="text"
-                        placeholder='Найти на miko'
-                        id='search'
-                        value={query}
-                        onChange={handleInputChange}
-                        onBlur={handleInputBlur}
-                        onFocus={() => query.trim() && setShowSuggestions(true)}
-                        onKeyDown={handleKeyDown}
-                    />
-                </label>
-                {showSuggestions && (
-                    <ul
-                        className={styles.suggestions}
-                        onMouseDown={(e) => e.preventDefault()}
-                    >
-                        {query.trim() && (
-                            <li>
-                                <Link
-                                    to={`/search/${query}`}
-                                    onClick={handleSuggestionClick}
+
+                {/* Catalog button — hidden on mobile */}
+                {!isMobile && (
+                    <Link to="/categories" className={styles.header__catalog}>
+                        <Burger color="#fff" size={18} opened={false} />
+                        <span>Каталог</span>
+                    </Link>
+                )}
+
+                {/* Search */}
+                <Combobox store={combobox} onOptionSubmit={handleSelect}>
+                    <Combobox.Target>
+                        <Input
+                            ref={inputRef}
+                            className={styles.header__search}
+                            leftSection={<IconSearch size={18} color="#aaa" />}
+                            placeholder={isMobile ? 'Поиск…' : 'Найти на Miko'}
+                            value={query}
+                            onChange={handleChange}
+                            onKeyDown={handleKeyDown}
+                            onFocus={() => query.trim() && combobox.openDropdown()}
+                            onBlur={() => setTimeout(() => combobox.closeDropdown(), 150)}
+                            radius="md"
+                            size={isMobile ? 'sm' : 'md'}
+                        />
+                    </Combobox.Target>
+                    {options.length > 0 && (
+                        <Combobox.Dropdown>
+                            <Combobox.Options>{options}</Combobox.Options>
+                        </Combobox.Dropdown>
+                    )}
+                </Combobox>
+
+                {/* Right actions */}
+                <Group gap={isMobile ? 6 : 12} wrap="nowrap">
+                    {/* Cart */}
+                    <Link to="/cart" className={styles.header__action}>
+                        <Box pos="relative" display="inline-flex">
+                            <ActionIcon
+                                variant="subtle"
+                                color="white"
+                                size={isMobile ? 'md' : 'lg'}
+                                aria-label="Корзина"
+                            >
+                                <IconShoppingCart
+                                    size={isMobile ? 22 : 26}
+                                    color="#fff"
+                                />
+                            </ActionIcon>
+                            {cartCount > 0 && (
+                                <Badge
+                                    size="xs"
+                                    color="red"
+                                    variant="filled"
+                                    pos="absolute"
+                                    top={-4}
+                                    right={-4}
+                                    style={{ pointerEvents: 'none', minWidth: rem(18), padding: '0 4px' }}
                                 >
-                                    Искать "{query}"
-                                </Link>
-                            </li>
+                                    {cartCount > 99 ? '99+' : cartCount}
+                                </Badge>
+                            )}
+                        </Box>
+                        {!isMobile && (
+                            <Text size="sm" fw={500} c="white">
+                                Корзина
+                            </Text>
                         )}
-                        {suggestions.map((item, index) => (
-                            <li key={index}>
-                                <Link to={`/search/${item}`} onClick={handleSuggestionClick}>
-                                    {item}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-                <Link to={'/cart'} className={styles.header__catalog}>
-                    <img src={cart} alt=""/>
-                    <span>Корзина</span>
-                </Link>
-                <div className={styles.header__catalog} onClick={handleFavoriteClick}>
-                    <img src={favorite} alt=""/>
-                </div>
-                {isCityModalOpen && (
-                    <CityModal
-                        open={isCityModalOpen}
-                        onClose={() => setIsCityModalOpen(false)}
-                        onCitySelect={handleCitySelect}
-                    />
-                )}
+                    </Link>
+
+                    {/* City */}
+                    <Box
+                        className={styles.header__action}
+                        onClick={() => setIsCityModalOpen(true)}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        <ActionIcon
+                            variant="subtle"
+                            color="white"
+                            size={isMobile ? 'md' : 'lg'}
+                            aria-label="Выбрать город"
+                        >
+                            <IconMapPin size={isMobile ? 20 : 24} color="#fff" />
+                        </ActionIcon>
+                        {!isMobile && selectedCity && (
+                            <Text size="sm" fw={500} c="white" style={{ whiteSpace: 'nowrap' }}>
+                                {selectedCity.name}
+                            </Text>
+                        )}
+                    </Box>
+                </Group>
             </div>
+
+            {isCityModalOpen && (
+                <CityModal
+                    open={isCityModalOpen}
+                    onClose={() => setIsCityModalOpen(false)}
+                    onCitySelect={(city) => {
+                        onCityChange(city);
+                        setIsCityModalOpen(false);
+                    }}
+                />
+            )}
         </header>
     );
 };

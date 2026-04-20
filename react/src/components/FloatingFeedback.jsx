@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Button, Card, Input, Space, Typography, message } from 'antd';
-import { MessageOutlined } from '@ant-design/icons';
+import { ActionIcon, Box, Button, Group, Paper, Stack, Text, Textarea, TextInput } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { IconMessage, IconX } from '@tabler/icons-react';
 import api from '../api/api';
-
-const { Text } = Typography;
 
 const FloatingFeedback = () => {
     const [open, setOpen] = useState(false);
@@ -13,61 +12,88 @@ const FloatingFeedback = () => {
 
     const submitFeedback = async () => {
         if (!feedbackText.trim()) {
-            message.warning('Введите текст обратной связи');
+            notifications.show({ color: 'yellow', message: 'Введите текст обратной связи' });
             return;
         }
-
         setSending(true);
         try {
             await api.post('/notifications/feedback', {
                 feedbackText: feedbackText.trim(),
                 contact: contact.trim(),
             });
-            message.success('Спасибо! Обратная связь отправлена');
+            notifications.show({ color: 'teal', message: 'Спасибо! Обратная связь отправлена' });
             setFeedbackText('');
             setContact('');
             setOpen(false);
-        } catch (error) {
-            message.error(error.response?.data?.error || 'Ошибка отправки обратной связи');
+        } catch (err) {
+            notifications.show({
+                color: 'red',
+                message: err.response?.data?.error || 'Ошибка отправки обратной связи',
+            });
         } finally {
             setSending(false);
         }
     };
 
     return (
-        <div style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000 }}>
+        <Box pos="fixed" right={20} bottom={20} style={{ zIndex: 1000 }}>
             {open && (
-                <Card style={{ width: 320, marginBottom: 12, borderRadius: 14, boxShadow: '0 12px 28px rgba(0, 0, 0, 0.15)' }}>
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                        <Text strong>Оставьте обратную связь</Text>
-                        <Input.TextArea
+                <Paper
+                    shadow="lg"
+                    radius="lg"
+                    p="md"
+                    w={300}
+                    mb="sm"
+                    withBorder
+                >
+                    <Stack gap="sm">
+                        <Group justify="space-between">
+                            <Text fw={600} size="sm">Обратная связь</Text>
+                            <ActionIcon
+                                variant="subtle"
+                                color="gray"
+                                size="sm"
+                                onClick={() => setOpen(false)}
+                            >
+                                <IconX size={14} />
+                            </ActionIcon>
+                        </Group>
+                        <Textarea
                             value={feedbackText}
                             onChange={(e) => setFeedbackText(e.target.value)}
                             placeholder="Напишите ваше сообщение"
-                            autoSize={{ minRows: 3, maxRows: 6 }}
+                            minRows={3}
+                            maxRows={6}
+                            autosize
                         />
-                        <Input
+                        <TextInput
                             value={contact}
                             onChange={(e) => setContact(e.target.value)}
                             placeholder="Контакт (необязательно)"
                         />
-                        <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-                            <Button onClick={() => setOpen(false)}>Закрыть</Button>
-                            <Button type="primary" loading={sending} onClick={submitFeedback}>Отправить</Button>
-                        </Space>
-                    </Space>
-                </Card>
+                        <Button fullWidth loading={sending} onClick={submitFeedback}>
+                            Отправить
+                        </Button>
+                    </Stack>
+                </Paper>
             )}
 
-            <Button
-                type="primary"
-                shape="circle"
-                size="large"
-                icon={<MessageOutlined />}
-                onClick={() => setOpen((prev) => !prev)}
-                style={{ width: 56, height: 56, boxShadow: '0 10px 24px rgba(24, 144, 255, 0.45)' }}
-            />
-        </div>
+            <ActionIcon
+                size={52}
+                radius="xl"
+                variant="filled"
+                color="miko"
+                onClick={() => setOpen((v) => !v)}
+                style={{
+                    boxShadow: '0 8px 20px rgba(12, 227, 203, 0.4)',
+                    display: 'flex',
+                    margin: '0 0 0 auto',
+                }}
+                aria-label="Обратная связь"
+            >
+                <IconMessage size={24} />
+            </ActionIcon>
+        </Box>
     );
 };
 

@@ -1,0 +1,86 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mantine-shadow-md);
+}
+
+.imageWrap {
+    position: relative;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.imageLink {
+    display: block;
+    text-decoration: none;
+}
+
+.image {
+    padding: 12px;
+    transition: transform 0.25s ease;
+}
+
+.card:hover .image {
+    transform: scale(1.04);
+}
+
+.badges {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+}
+
+.favoriteBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.outOfStock {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.body {
+    padding: 12px 12px 14px;
+    flex: 1;
+}
+
+.name {
+    text-decoration: none;
+    color: var(--mantine-color-dark-7);
+    min-height: 2.4em;
+    line-height: 1.2;
+}
+
+.name:hover {
+    color: var(--mantine-color-miko-7);
+}
+
+.qtyRow {
+    width: 100%;
+}
+
+@media (max-width: 48em) {
+    .body {
+        padding: 10px 10px 12px;
+    }
+}

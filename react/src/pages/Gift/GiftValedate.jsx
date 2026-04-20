@@ -1,12 +1,21 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Container, Typography, CircularProgress, Card, CardContent, Button, Box } from "@mui/material";
-import { CheckCircle, ErrorOutline } from "@mui/icons-material";
-import api from "../../api/api";
-import Confetti from "react-confetti";
-import { motion } from "framer-motion";
-import Swal from "sweetalert2";
-import { formatCurrency } from "../../utils/formatters";
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+    Box,
+    Button,
+    Card,
+    Center,
+    Loader,
+    Stack,
+    Text,
+    Title,
+} from '@mantine/core';
+import { IconCheck, IconAlertCircle } from '@tabler/icons-react';
+import { motion } from 'framer-motion';
+import Confetti from 'react-confetti';
+import Swal from 'sweetalert2';
+import api from '../../api/api';
+import { formatCurrency } from '../../utils/formatters';
 
 export const GiftValidate = () => {
     const { id } = useParams();
@@ -16,79 +25,112 @@ export const GiftValidate = () => {
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
     useEffect(() => {
-        const fetchGiftCertificate = async () => {
-            try {
-                const response = await api.get(`/purchased-certificates/validate/${id}`);
-                setCertificate(response.data);
-            } catch (err) {
-                setError(err.response?.data?.message || "Ошибка при проверке сертификата.");
-            } finally {
-                setLoading(false);
-            }
-        };
+        const handleResize = () =>
+            setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+        window.addEventListener('resize', handleResize);
 
-        fetchGiftCertificate();
-        window.addEventListener("resize", () => setWindowSize({ width: window.innerWidth, height: window.innerHeight }));
+        api.get(`/purchased-certificates/validate/${id}`)
+            .then((res) => setCertificate(res.data))
+            .catch((err) => setError(err.response?.data?.message || 'Ошибка при проверке сертификата.'))
+            .finally(() => setLoading(false));
+
+        return () => window.removeEventListener('resize', handleResize);
     }, [id]);
 
     const handleActivate = () => {
-        if (certificate && certificate.valid) {
-            localStorage.setItem("gift", id);
+        if (certificate?.valid) {
+            localStorage.setItem('gift', id);
             Swal.fire({
-                title: "Сертификат активирован!",
-                text: "Приятного использования 🎉",
-                icon: "success",
-                confirmButtonText: "Перейти",
+                title: 'Сертификат активирован!',
+                text: 'Приятного использования 🎉',
+                icon: 'success',
+                confirmButtonText: 'Перейти',
                 showCancelButton: true,
-                cancelButtonText: "Закрыть",
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
+                cancelButtonText: 'Закрыть',
+                confirmButtonColor: '#0CE3CB',
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = "https://miko.com.kz/";
+                    window.location.href = '/';
                 }
             });
         }
     };
 
     return (
-        <Container maxWidth={false} sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #ff9a9e, #fad0c4)", width: "100%" }}>
+        <Center
+            mih="100vh"
+            style={{
+                background: 'linear-gradient(135deg, #e6fffa 0%, #f0f9ff 100%)',
+            }}
+        >
             {loading ? (
-                <CircularProgress color="secondary" size={80} />
+                <Stack align="center" gap="md">
+                    <Loader size="xl" color="miko" />
+                    <Text c="dimmed">Проверяем сертификат…</Text>
+                </Stack>
             ) : error ? (
-                <Card sx={{ padding: 4, textAlign: "center", boxShadow: 3, backgroundColor: "white" }}>
-                    <ErrorOutline color="error" sx={{ fontSize: 60 }} />
-                    <Typography variant="h5" color="error" sx={{ marginTop: 2 }}>Ошибка</Typography>
-                    <Typography>{error}</Typography>
+                <Card radius="xl" shadow="md" p="xl" maw={420} ta="center">
+                    <Stack align="center" gap="md">
+                        <IconAlertCircle size={60} color="var(--mantine-color-red-6)" />
+                        <Title order={3} c="red">Ошибка</Title>
+                        <Text c="dimmed">{error}</Text>
+                    </Stack>
                 </Card>
             ) : (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                    {certificate.valid && <Confetti width={windowSize.width} height={windowSize.height} />}
-                    <Card sx={{ padding: 6, textAlign: "center", boxShadow: 5, backgroundColor: "white", borderRadius: 4 }}>
-                        <CardContent>
-                            <Box component="img" src={certificate.giftCertificate.imageUrl} sx={{ maxWidth: 321, maxHeight: 189, width: '100%', margin: "0 auto", borderRadius: '10px', objectFit: "cover" }} />
-                            <Typography variant="h4" fontWeight={700} color="primary" sx={{ mt: 2 }}>{certificate.giftCertificate.name}</Typography>
-                            <Typography variant="h6" sx={{ mt: 2, color: "gray" }}>🎁 Вам подарили сертификат на сумму:</Typography>
-                            <Typography variant="h3" color="success.main" fontWeight={700} sx={{ mt: 1 }}>{formatCurrency(certificate.amount, "KZT")}</Typography>
-                            <Typography variant="body1" sx={{ mt: 2 }}>Отправитель: <strong>{certificate.senderPhone}</strong></Typography>
-                            <Box mt={4}>
-                                <motion.div whileHover={{ scale: 1.1 }}>
+                <>
+                    {certificate?.valid && (
+                        <Confetti
+                            width={windowSize.width}
+                            height={windowSize.height}
+                            recycle={false}
+                            numberOfPieces={300}
+                        />
+                    )}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        <Card radius="xl" shadow="lg" p="xl" maw={480} ta="center">
+                            <Stack align="center" gap="md">
+                                {certificate?.giftCertificate?.imageUrl && (
+                                    <Box
+                                        component="img"
+                                        src={certificate.giftCertificate.imageUrl}
+                                        style={{
+                                            maxWidth: 320,
+                                            width: '100%',
+                                            borderRadius: 12,
+                                            objectFit: 'cover',
+                                        }}
+                                    />
+                                )}
+                                <Title order={3} fw={800}>{certificate?.giftCertificate?.name}</Title>
+                                <Text size="lg" c="dimmed">🎁 Вам подарили сертификат на сумму:</Text>
+                                <Title order={1} fw={800} c="miko">
+                                    {formatCurrency(certificate?.amount)}
+                                </Title>
+                                <Text c="dimmed">
+                                    Отправитель: <Text span fw={700} c="dark">{certificate?.senderPhone}</Text>
+                                </Text>
+                                <motion.div whileHover={{ scale: 1.05 }} style={{ width: '100%' }}>
                                     <Button
+                                        fullWidth
+                                        size="xl"
+                                        color="miko"
+                                        radius="xl"
+                                        leftSection={<IconCheck size={20} />}
                                         onClick={handleActivate}
-                                        variant="contained"
-                                        color="primary"
-                                        size="large"
-                                        sx={{ padding: "12px 24px", fontSize: "1.2rem", borderRadius: "30px" }}
-                                        startIcon={<CheckCircle />}
+                                        mt="md"
                                     >
                                         Активировать подарок 🎉
                                     </Button>
                                 </motion.div>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                            </Stack>
+                        </Card>
+                    </motion.div>
+                </>
             )}
-        </Container>
+        </Center>
     );
 };

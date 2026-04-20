@@ -1,156 +1,96 @@
 .header {
   width: 100%;
-  border-radius: 0 0 10px 10px;
   background: #0CE3CB;
-  height: 88px;
-  display: flex;
-  align-items: center;
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 12px rgba(12, 227, 203, 0.25);
 
-  &__block {
+  &__inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    height: 100%;
-    gap: 24px;
+    gap: 16px;
+    height: 72px;
+  }
 
+  &__logo {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+
+    img {
+      height: 36px;
+      width: auto;
+    }
   }
 
   &__catalog {
     display: flex;
-    gap: 8px;
-    border-radius: 10px;
-    background: var(--logo-white, rgba(255, 255, 255, 0.23));
-    padding: 10px 20px;
     align-items: center;
-
-    color: #FFF;
-    text-align: center;
-    font-size: 18px;
-    font-style: normal;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 10px 18px;
+    border-radius: var(--mantine-radius-md);
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
     font-weight: 500;
-    line-height: normal;
-    letter-spacing: -0.3px;
+    white-space: nowrap;
+    transition: background 0.15s;
 
-
+    &:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
   }
 
   &__search {
-    border-radius: 10px;
-    background: var(--logo-white, #FEFEFE);
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
 
     input {
+      background: #fff;
       border: none;
-      outline: none;
-      width: 100%;
-      color: #333;
-      font-size: 18px;
-      font-style: normal;
-      font-weight: 400;
-      line-height: normal;
-      letter-spacing: -0.3px;
 
       &::placeholder {
-        color: rgba(11, 227, 202, 0.8);
+        color: #aaa;
+      }
+
+      &:focus {
+        outline: none;
       }
     }
 
-    img:nth-child(2){
-      display: none;
+    // Mantine Input wrapper
+    [data-mantine-input-wrapper] {
+      width: 100%;
+    }
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: #fff;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+
+    &:hover {
+      opacity: 0.85;
     }
   }
 }
 
-@media (max-width: 800px) {
-
-  span {
-    display: none;
-  }
-
+@media (max-width: 48em) {
   .header {
-    height: 76px;
-
-    &__logo {
-      display: flex;
-      align-items: center;
-      width: 153px;
-
-      img {
-        max-width: 100%;
-      }
-    }
-
-    &__block {
+    &__inner {
+      height: 60px;
       gap: 10px;
     }
 
-    &__search {
-      padding: 10px 13px;
-      background: rgba(255, 255, 255, 0.3);
-
-      img {
-        display: none;
-      }
-
-      img:last-of-type {
-        height: 15px;
-        display: block;
-      }
-
-      input {
-        font-size: 15px;
-        background: transparent;
-
-        &::placeholder {
-          color: white;
-        }
-      }
-    }
-
-    &__catalog {
-      display: none;
-
-      &:last-of-type {
-        display: flex;
-        padding: 10px;
-      }
-    }
-  }
-
-}
-
-.suggestions {
-  position: absolute;
-  background: white;
-  list-style: none;
-  padding: 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  top: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 10;
-  border-radius: 0 0 10px 10px;
-  left: 20px;
-  right: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-
-  li {
-    padding: 10px;
-    cursor: pointer;
-
-    &:hover {
-      background: #f0f0f0;
-    }
-
-    a {
-      text-decoration: none;
-      color: black;
+    &__logo img {
+      height: 28px;
     }
   }
 }
