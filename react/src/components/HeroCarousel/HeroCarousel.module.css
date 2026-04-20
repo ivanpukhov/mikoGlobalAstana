@@ -35,6 +35,88 @@
     inset: 0;
 }
 
+.textSlide {
+    color: #ffffff;
+}
+
+.textBanner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding: clamp(1.1rem, 2vw, 2rem);
+}
+
+.textBanner::before,
+.textBanner::after {
+    content: '';
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    pointer-events: none;
+}
+
+.textBanner::before {
+    top: -10%;
+    right: -4%;
+    width: 11rem;
+    height: 11rem;
+}
+
+.textBanner::after {
+    bottom: -18%;
+    right: 20%;
+    width: 7rem;
+    height: 7rem;
+}
+
+.textContent {
+    position: relative;
+    z-index: 1;
+    max-width: min(78%, 32rem);
+}
+
+.eyebrow {
+    display: inline-flex;
+    margin-bottom: 0.65rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.textTitle {
+    margin: 0;
+    font-size: clamp(1.45rem, 2.5vw, 2.3rem);
+    line-height: 1.08;
+    font-weight: 800;
+}
+
+.textDescription {
+    margin: 0.8rem 0 0;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: clamp(0.92rem, 1.35vw, 1.02rem);
+    line-height: 1.5;
+}
+
+.slideButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+    padding: 0.8rem 1.15rem;
+    border-radius: 0.95rem;
+    background: rgba(255, 255, 255, 0.96);
+    color: #111827;
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
 .image {
     width: 100%;
     height: 100%;
@@ -77,6 +159,26 @@
 @media (max-width: 48em) {
     .slide {
         padding-top: 58%;
+    }
+
+    .textContent {
+        max-width: 88%;
+    }
+
+    .textTitle {
+        font-size: 1.35rem;
+    }
+
+    .textDescription {
+        margin-top: 0.7rem;
+        font-size: 0.88rem;
+        line-height: 1.42;
+    }
+
+    .slideButton {
+        margin-top: 0.85rem;
+        padding: 0.72rem 1rem;
+        font-size: 0.88rem;
     }
 
     .root :global(.swiper-button-prev),

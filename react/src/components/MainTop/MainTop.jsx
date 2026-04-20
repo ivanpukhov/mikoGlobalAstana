@@ -1,18 +1,15 @@
 import { Box, Grid, SimpleGrid } from '@mantine/core';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../api/api';
 import { HeroCarousel } from '../HeroCarousel/HeroCarousel';
 import { CategoryTile } from '../CategoryTile/CategoryTile';
 import { SectionHeader } from '../SectionHeader/SectionHeader';
 import styles from './MainTop.module.scss';
-import banner from '../../images/bbner.png';
-import bannergift from '../../images/bannergift.jpg';
-
-const SLIDES = [
-    { image: banner, alt: 'Главный баннер' },
-    { image: bannergift, alt: 'Подарочные сертификаты', href: '/gift-certificates' },
-];
 
 export const MainTop = ({ categories = [], loading = false }) => {
+    const [slides, setSlides] = useState([]);
+    const [slidesLoading, setSlidesLoading] = useState(true);
     const topCategories = categories.slice(0, 7);
     const tiles = [
         ...topCategories,
@@ -24,11 +21,33 @@ export const MainTop = ({ categories = [], loading = false }) => {
         },
     ];
 
+    useEffect(() => {
+        let cancelled = false;
+
+        api.get('/banners')
+            .then(({ data }) => {
+                if (!cancelled) {
+                    setSlides(Array.isArray(data) ? data : []);
+                    setSlidesLoading(false);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setSlides([]);
+                    setSlidesLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     return (
         <Box className={styles.mainTop}>
             <Grid gutter={{ base: 'md', md: 'xl' }} align="stretch">
                 <Grid.Col span={{ base: 12, md: 6 }} style={{ display: 'flex' }}>
-                    <HeroCarousel slides={SLIDES} fillHeight />
+                    <HeroCarousel slides={slides} loading={slidesLoading} fillHeight />
                 </Grid.Col>
 
                 {(topCategories.length > 0 || loading) && (

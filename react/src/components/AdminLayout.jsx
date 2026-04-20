@@ -17,6 +17,7 @@ import {
     IconHome,
     IconLogout,
     IconMapPin,
+    IconPhoto,
     IconShoppingCart,
     IconTag,
     IconTicket,
@@ -28,6 +29,7 @@ import logo from '../images/logo-admin.svg';
 const NAV_ITEMS = [
     { to: '/admin/products',                icon: IconBuildingStore, label: 'Товары' },
     { to: '/admin/categories',              icon: IconCategory,      label: 'Категории' },
+    { to: '/admin/banners',                 icon: IconPhoto,         label: 'Баннеры' },
     { to: '/admin/order-gifts',             icon: IconGift,          label: 'Подарки к заказу' },
     { to: '/admin/cities',                  icon: IconMapPin,        label: 'Города' },
     { to: '/admin/orders',                  icon: IconShoppingCart,  label: 'Заказы' },

@@ -12,6 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 const giftCertificateRoutes = require('./routes/giftCertificateRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const orderGiftRuleRoutes = require('./routes/orderGiftRuleRoutes');
+const bannerRoutes = require('./routes/bannerRoutes');
 const { seedDefaultOrderGiftRules } = require('./controllers/orderGiftRuleController');
 
 const purchasedCertificateRoutes = require('./routes/purchasedCertificateRoutes');
@@ -31,6 +32,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/order-gift-rules', orderGiftRuleRoutes);
+app.use('/api/banners', bannerRoutes);
 // Синхронизация базы данных и индексация
 (async () => {
     try {

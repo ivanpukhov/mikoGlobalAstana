@@ -14,6 +14,7 @@ const PurchasedCertificate = require('./PurchasedCertificate');
 const NotificationSetting = require('./NotificationSetting');
 const NotificationTemplate = require('./NotificationTemplate');
 const OrderGiftRule = require('./OrderGiftRule');
+const Banner = require('./Banner');
 
 // Ассоциации
 Category.hasMany(Subcategory, { foreignKey: 'categoryId', as: 'subcategories' });
@@ -57,4 +58,5 @@ module.exports = {
     NotificationSetting,
     NotificationTemplate,
     OrderGiftRule,
+    Banner,
 };
