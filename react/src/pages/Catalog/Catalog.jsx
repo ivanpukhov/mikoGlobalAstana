@@ -64,18 +64,29 @@ export const Catalog = () => {
         const fetch = async () => {
             try {
                 setLoading(true);
-                const [productsRes, categoriesRes] = await Promise.all([
-                    api.get(`/products/${city.id}/category/${categoryId}/products`),
-                    api.get('/categories'),
+                setActiveSub(null);
+
+                const [productsRes, subcategoriesRes] = await Promise.all([
+                    api.get(`/products/${city.id}/category/${categoryId}/products`).catch((error) => {
+                        if (error.response?.status === 404) {
+                            return { data: [] };
+                        }
+                        throw error;
+                    }),
+                    api.get(`/categories/${categoryId}/subcategories`, {
+                        params: { excludeEmpty: 1 },
+                    }),
                 ]);
-                const data = productsRes.data;
+                const data = Array.isArray(productsRes.data) ? productsRes.data : [];
                 setProducts(data);
 
-                const subs = [...new Set(data.map((p) => p.subcategoryId))].filter(Boolean);
-                setSubcategories(subs.map((sid) => {
-                    const p = data.find((pr) => pr.subcategoryId === sid);
-                    return { id: sid, name: p?.subcategory?.name || `Подкатегория ${sid}` };
-                }));
+                const subs = Array.isArray(subcategoriesRes.data?.subcategories)
+                    ? subcategoriesRes.data.subcategories
+                    : [];
+                setSubcategories(subs.map((subcategory) => ({
+                    id: subcategory.id,
+                    name: subcategory.name,
+                })));
 
                 const prices = data.map((p) => getDiscountedPrice(p)).filter(Boolean);
                 if (prices.length) {
@@ -86,8 +97,7 @@ export const Catalog = () => {
                     setPriceRange([mn, mx]);
                 }
 
-                const cat = categoriesRes.data.find((c) => c.id === parseInt(categoryId));
-                if (cat) setCategoryName(cat.name);
+                setCategoryName(subcategoriesRes.data?.name || '');
             } catch (err) {
                 console.error(err);
             } finally {
