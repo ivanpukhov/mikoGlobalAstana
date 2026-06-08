@@ -22,7 +22,7 @@ import {
     IconRefresh,
 } from '@tabler/icons-react';
 import { QRCodeSVG } from 'qrcode.react';
-import api from '../api/api';
+import api, { getApiErrorMessage } from '../api/api';
 import { EmptyState } from '../components/ui';
 
 const NotificationsPage = () => {
@@ -69,7 +69,7 @@ const NotificationsPage = () => {
             const { data } = await api.get('/notifications/state');
             applyConnectionState(data);
         } catch (error) {
-            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось проверить состояние WhatsApp' });
+            notifications.show({ color: 'red', message: getApiErrorMessage(error, 'Не удалось проверить состояние WhatsApp') });
         } finally {
             setCheckingState(false);
         }
@@ -92,7 +92,7 @@ const NotificationsPage = () => {
             }
             applyConnectionState(stateResp.data);
         } catch (error) {
-            notifications.show({ color: 'red', message: error.response?.data?.error || 'Ошибка загрузки данных уведомлений' });
+            notifications.show({ color: 'red', message: getApiErrorMessage(error, 'Ошибка загрузки данных уведомлений') });
         } finally {
             setLoading(false);
         }
@@ -124,7 +124,7 @@ const NotificationsPage = () => {
             stopPolling();
             pollerRef.current = setInterval(checkState, 5000);
         } catch (error) {
-            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось получить QR код' });
+            notifications.show({ color: 'red', message: getApiErrorMessage(error, 'Не удалось получить QR код') });
         } finally {
             setQrLoading(false);
         }
@@ -139,7 +139,7 @@ const NotificationsPage = () => {
             stopPolling();
             notifications.show({ color: 'teal', message: 'WhatsApp отключён' });
         } catch (error) {
-            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось отключить WhatsApp' });
+            notifications.show({ color: 'red', message: getApiErrorMessage(error, 'Не удалось отключить WhatsApp') });
         } finally {
             setLogoutLoading(false);
         }
@@ -158,7 +158,7 @@ const NotificationsPage = () => {
             );
             notifications.show({ color: 'teal', message: `Шаблон «${template.name}» сохранён` });
         } catch (error) {
-            notifications.show({ color: 'red', message: error.response?.data?.error || 'Ошибка сохранения шаблона' });
+            notifications.show({ color: 'red', message: getApiErrorMessage(error, 'Ошибка сохранения шаблона') });
         } finally {
             setSavingTemplateKey('');
         }
