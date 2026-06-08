@@ -1,9 +1,7 @@
-const { NotificationSetting, NotificationTemplate, User } = require('../models');
+const { NotificationTemplate, User } = require('../models');
 const sendNotification = require('../utils/notificationService');
 const { ensureDefaultTemplates, getRenderedTemplate } = require('../utils/templateService');
-const { getSettings, getStateInstance, getQr } = require('../utils/greenApiService');
-
-const normalizeUrl = (value) => (value || '').trim().replace(/\/+$/, '');
+const { disconnectWhatsApp, getSettings, getStateInstance, getQr } = require('../utils/baileysService');
 
 const getNotificationSettings = async (req, res) => {
     try {
@@ -18,17 +16,6 @@ const getNotificationSettings = async (req, res) => {
 const updateNotificationSettings = async (req, res) => {
     try {
         const settings = await getSettings();
-        const { apiUrl, mediaUrl, idInstance, apiTokenInstance } = req.body;
-
-        if (!apiUrl || !mediaUrl || !idInstance || !apiTokenInstance) {
-            return res.status(400).json({ error: 'Все поля Green API обязательны.' });
-        }
-
-        settings.apiUrl = normalizeUrl(apiUrl);
-        settings.mediaUrl = normalizeUrl(mediaUrl);
-        settings.idInstance = idInstance ? String(idInstance).trim() : null;
-        settings.apiTokenInstance = apiTokenInstance ? String(apiTokenInstance).trim() : null;
-
         await settings.save();
         res.json(settings);
     } catch (error) {
@@ -48,6 +35,15 @@ const checkInstanceState = async (req, res) => {
 const getInstanceQr = async (req, res) => {
     try {
         const data = await getQr();
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const logoutWhatsApp = async (req, res) => {
+    try {
+        const data = await disconnectWhatsApp();
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -126,6 +122,7 @@ module.exports = {
     updateNotificationSettings,
     checkInstanceState,
     getInstanceQr,
+    logoutWhatsApp,
     getNotificationTemplates,
     updateNotificationTemplate,
     sendFeedback,

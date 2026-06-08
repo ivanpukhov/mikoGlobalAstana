@@ -146,6 +146,7 @@ function App() {
                         <Route path="users/create" element={<UserCreatePage />} />
                         <Route path="gift-certificates" element={<GiftCertificatesPage />} />
                         <Route path="purchased-certificates" element={<PurchasedCertificatesPage />} />
+                        <Route path="whatsapp" element={<NotificationsPage />} />
                         <Route path="notifications" element={<NotificationsPage />} />
                     </Route>
                     <Route path="/admin/login" element={<LoginPage />} />

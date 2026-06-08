@@ -11,7 +11,7 @@ import { useDisclosure } from '@mantine/hooks';
 import {
     IconCategory,
     IconChartBar,
-    IconBell,
+    IconBrandWhatsapp,
     IconBuildingStore,
     IconGift,
     IconHome,
@@ -38,7 +38,7 @@ const NAV_ITEMS = [
     { to: '/admin/promocodes',              icon: IconTag,           label: 'Промокоды' },
     { to: '/admin/gift-certificates',       icon: IconGift,          label: 'Подарочные серт.' },
     { to: '/admin/purchased-certificates',  icon: IconTicket,        label: 'Купленные серт.' },
-    { to: '/admin/notifications',           icon: IconBell,          label: 'Уведомления' },
+    { to: '/admin/whatsapp',                icon: IconBrandWhatsapp, label: 'WhatsApp' },
 ];
 
 const AdminLayout = () => {

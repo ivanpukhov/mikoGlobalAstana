@@ -8,19 +8,16 @@ import {
     Grid,
     Group,
     Loader,
-    PasswordInput,
     SimpleGrid,
     Stack,
     Text,
     Textarea,
-    TextInput,
     Title,
 } from '@mantine/core';
-import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import {
     IconCheck,
-    IconDeviceFloppy,
+    IconPower,
     IconQrcode,
     IconRefresh,
 } from '@tabler/icons-react';
@@ -29,31 +26,15 @@ import api from '../api/api';
 import { EmptyState } from '../components/ui';
 
 const NotificationsPage = () => {
-    const form = useForm({
-        initialValues: {
-            apiUrl: '',
-            mediaUrl: '',
-            idInstance: '',
-            apiTokenInstance: '',
-        },
-        validate: {
-            apiUrl: (v) => (v.trim() ? null : 'Укажите apiUrl'),
-            mediaUrl: (v) => (v.trim() ? null : 'Укажите mediaUrl'),
-            idInstance: (v) => (v.trim() ? null : 'Укажите idInstance'),
-            apiTokenInstance: (v) => (v.trim() ? null : 'Укажите apiTokenInstance'),
-        },
-    });
-
     const [loading, setLoading] = useState(true);
-    const [savingSettings, setSavingSettings] = useState(false);
     const [checkingState, setCheckingState] = useState(false);
     const [qrLoading, setQrLoading] = useState(false);
+    const [logoutLoading, setLogoutLoading] = useState(false);
     const [instanceState, setInstanceState] = useState('unknown');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [qrText, setQrText] = useState('');
     const [templates, setTemplates] = useState([]);
     const [savingTemplateKey, setSavingTemplateKey] = useState('');
-    const [qrRenderMode, setQrRenderMode] = useState('text');
     const pollerRef = useRef(null);
 
     const stopPolling = useCallback(() => {
@@ -63,39 +44,45 @@ const NotificationsPage = () => {
         }
     }, []);
 
+    const applyConnectionState = useCallback((data) => {
+        const nextState = data?.stateInstance || 'unknown';
+        const authorized = Boolean(data?.isAuthorized);
+        const nextQr = String(data?.qrCode || data?.message || '').trim();
+
+        setInstanceState(nextState);
+        setIsAuthorized(authorized);
+
+        if (authorized) {
+            setQrText('');
+            stopPolling();
+            return;
+        }
+
+        if (nextQr) {
+            setQrText(nextQr);
+        }
+    }, [stopPolling]);
+
     const checkState = useCallback(async () => {
         setCheckingState(true);
         try {
             const { data } = await api.get('/notifications/state');
-            const nextState = data?.stateInstance || 'unknown';
-            const authorized = Boolean(data?.isAuthorized);
-            setInstanceState(nextState);
-            setIsAuthorized(authorized);
-            if (authorized) {
-                setQrText('');
-                stopPolling();
-            }
+            applyConnectionState(data);
         } catch (error) {
-            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось проверить состояние инстанса' });
+            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось проверить состояние WhatsApp' });
         } finally {
             setCheckingState(false);
         }
-    }, [stopPolling]);
+    }, [applyConnectionState]);
 
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            const [settingsResp, templatesResp] = await Promise.all([
+            const [settingsResp, templatesResp, stateResp] = await Promise.all([
                 api.get('/notifications/settings'),
                 api.get('/notifications/templates'),
+                api.get('/notifications/state'),
             ]);
-
-            form.setValues({
-                apiUrl: settingsResp.data.apiUrl,
-                mediaUrl: settingsResp.data.mediaUrl,
-                idInstance: settingsResp.data.idInstance,
-                apiTokenInstance: settingsResp.data.apiTokenInstance,
-            });
 
             setTemplates(templatesResp.data.map((item) => ({ ...item, draftText: item.text })));
 
@@ -103,80 +90,36 @@ const NotificationsPage = () => {
                 setInstanceState(settingsResp.data.instanceState);
                 setIsAuthorized(Boolean(settingsResp.data.isAuthorized));
             }
+            applyConnectionState(stateResp.data);
         } catch (error) {
             notifications.show({ color: 'red', message: error.response?.data?.error || 'Ошибка загрузки данных уведомлений' });
         } finally {
             setLoading(false);
         }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [applyConnectionState]);
 
     useEffect(() => {
         loadData();
         return () => stopPolling();
     }, [loadData, stopPolling]);
 
-    const saveSettings = async () => {
-        const validation = form.validate();
-        if (validation.hasErrors) return false;
-        setSavingSettings(true);
-        try {
-            await api.put('/notifications/settings', form.values);
-            notifications.show({ color: 'teal', message: 'Настройки Green API сохранены' });
-            return true;
-        } catch (error) {
-            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось сохранить настройки' });
-            return false;
-        } finally {
-            setSavingSettings(false);
-        }
-    };
-
     const startAuthorization = async () => {
-        const saved = await saveSettings();
-        if (!saved) return;
-
         setQrLoading(true);
         try {
             const { data } = await api.post('/notifications/qr');
 
             if (data?.type === 'alreadyLogged' || data?.type === 'authorized') {
-                setIsAuthorized(true);
-                setInstanceState('authorized');
-                setQrText('');
+                applyConnectionState({ ...data, stateInstance: 'authorized', isAuthorized: true });
                 stopPolling();
-                notifications.show({ color: 'teal', message: 'Инстанс уже авторизован' });
-                return;
-            }
-
-            if (data?.type === 'qrCode') {
-                const qrMessage = String(data?.message || data?.qrCode || '').trim();
-                if (!qrMessage) { notifications.show({ color: 'yellow', message: 'QR пока недоступен. Проверьте состояние инстанса.' }); return; }
-                setQrRenderMode('image');
-                setQrText(`data:image/png;base64,${qrMessage.replace(/\s+/g, '')}`);
-                setIsAuthorized(false);
-                stopPolling();
-                pollerRef.current = setInterval(checkState, 5000);
+                notifications.show({ color: 'teal', message: 'WhatsApp уже подключён' });
                 return;
             }
 
             const qrValueRaw = String(data?.qrCode || data?.message || '').trim();
-            if (!qrValueRaw) { notifications.show({ color: 'yellow', message: 'QR пока недоступен. Проверьте состояние инстанса.' }); return; }
+            if (!qrValueRaw) { notifications.show({ color: 'yellow', message: 'QR пока недоступен. Проверьте состояние WhatsApp.' }); return; }
 
-            const normalized = qrValueRaw.replace(/\s+/g, '');
-            const isDataImage = /^data:image\/[a-zA-Z+.-]+;base64,/.test(normalized);
-            const isLongBase64 = normalized.length > 1200 && /^[A-Za-z0-9+/=]+$/.test(normalized);
-
-            if (isDataImage) {
-                setQrRenderMode('image');
-                setQrText(normalized);
-            } else if (isLongBase64 || qrValueRaw.length > 1200) {
-                setQrRenderMode('image');
-                setQrText(`data:image/png;base64,${normalized}`);
-            } else {
-                setQrRenderMode('text');
-                setQrText(qrValueRaw);
-            }
-
+            setQrText(qrValueRaw);
+            setInstanceState(data?.stateInstance || 'qr');
             setIsAuthorized(false);
             stopPolling();
             pollerRef.current = setInterval(checkState, 5000);
@@ -184,6 +127,21 @@ const NotificationsPage = () => {
             notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось получить QR код' });
         } finally {
             setQrLoading(false);
+        }
+    };
+
+    const logoutWhatsApp = async () => {
+        setLogoutLoading(true);
+        try {
+            const { data } = await api.post('/notifications/logout');
+            applyConnectionState(data);
+            setQrText('');
+            stopPolling();
+            notifications.show({ color: 'teal', message: 'WhatsApp отключён' });
+        } catch (error) {
+            notifications.show({ color: 'red', message: error.response?.data?.error || 'Не удалось отключить WhatsApp' });
+        } finally {
+            setLogoutLoading(false);
         }
     };
 
@@ -206,7 +164,7 @@ const NotificationsPage = () => {
         }
     };
 
-    const stateColor = isAuthorized ? 'teal' : instanceState === 'notAuthorized' ? 'red' : 'yellow';
+    const stateColor = isAuthorized ? 'teal' : instanceState === 'qr' ? 'blue' : ['loggedOut', 'notAuthorized', 'error'].includes(instanceState) ? 'red' : 'yellow';
 
     if (loading) {
         return <Group justify="center" py="xl"><Loader size="lg" color="miko" /></Group>;
@@ -214,88 +172,86 @@ const NotificationsPage = () => {
 
     return (
         <Stack gap="lg">
-            {/* Green API Settings */}
             <Card radius="xl" shadow="sm" p="xl" withBorder>
                 <Stack gap="md">
-                    <Title order={4} fw={700}>Уведомления и Green API</Title>
+                    <Title order={4} fw={700}>Подключение WhatsApp</Title>
                     <Text c="dimmed" size="sm">
-                        Заполните параметры подключения, проверьте состояние инстанса и выполните авторизацию по QR.
+                        Авторизация выполняется через Baileys. После сканирования QR уведомления будут отправляться с подключённого номера.
                     </Text>
 
                     <Grid gutter="xl">
                         <Grid.Col span={{ base: 12, md: 6 }}>
-                            <form>
-                                <Stack gap="sm">
-                                    <TextInput label="apiUrl" placeholder="https://api.green-api.com" {...form.getInputProps('apiUrl')} radius="md" />
-                                    <TextInput label="mediaUrl" placeholder="https://media.green-api.com" {...form.getInputProps('mediaUrl')} radius="md" />
-                                    <TextInput label="idInstance" placeholder="7103..." {...form.getInputProps('idInstance')} radius="md" />
-                                    <PasswordInput label="apiTokenInstance" placeholder="api token" {...form.getInputProps('apiTokenInstance')} radius="md" />
+                            <Stack gap="md">
+                                <Group gap="sm" wrap="wrap">
+                                    <Badge color={stateColor} size="lg" variant="light">
+                                        Состояние: {instanceState || 'unknown'}
+                                    </Badge>
+                                    {isAuthorized && (
+                                        <Badge color="teal" size="lg" variant="filled">
+                                            Подключено
+                                        </Badge>
+                                    )}
+                                </Group>
 
-                                    <Group mt="sm" gap="sm" wrap="wrap">
-                                        <Button
-                                            leftSection={<IconDeviceFloppy size={16} />}
-                                            color="miko"
-                                            radius="md"
-                                            loading={savingSettings}
-                                            onClick={saveSettings}
-                                        >
-                                            Сохранить
-                                        </Button>
-                                        <Button
-                                            leftSection={<IconRefresh size={16} />}
-                                            variant="default"
-                                            radius="md"
-                                            loading={checkingState}
-                                            onClick={checkState}
-                                        >
-                                            Проверить состояние
-                                        </Button>
-                                        <Button
-                                            leftSection={<IconQrcode size={16} />}
-                                            variant="default"
-                                            radius="md"
-                                            loading={qrLoading}
-                                            onClick={startAuthorization}
-                                        >
-                                            Авторизация
-                                        </Button>
-                                    </Group>
-                                </Stack>
-                            </form>
-                        </Grid.Col>
+                                <Group gap="sm" wrap="wrap">
+                                    <Button
+                                        leftSection={<IconQrcode size={16} />}
+                                        color="miko"
+                                        radius="md"
+                                        loading={qrLoading}
+                                        onClick={startAuthorization}
+                                    >
+                                        Получить QR
+                                    </Button>
+                                    <Button
+                                        leftSection={<IconRefresh size={16} />}
+                                        variant="default"
+                                        radius="md"
+                                        loading={checkingState}
+                                        onClick={checkState}
+                                    >
+                                        Проверить
+                                    </Button>
+                                    <Button
+                                        leftSection={<IconPower size={16} />}
+                                        variant="light"
+                                        color="red"
+                                        radius="md"
+                                        loading={logoutLoading}
+                                        onClick={logoutWhatsApp}
+                                    >
+                                        Отключить
+                                    </Button>
+                                </Group>
 
-                        <Grid.Col span={{ base: 12, md: 6 }}>
-                            <Stack align="center" gap="md">
-                                <Badge color={stateColor} size="lg" variant="light">
-                                    Состояние: {instanceState || 'unknown'}
-                                </Badge>
-
-                                {isAuthorized && (
+                                {isAuthorized ? (
                                     <Alert
                                         color="teal"
                                         radius="md"
                                         icon={<IconCheck size={16} />}
-                                        title="Инстанс авторизован"
+                                        title="WhatsApp подключён"
                                     />
+                                ) : (
+                                    <Alert color="blue" radius="md" title="Ожидает авторизацию">
+                                        Нажмите «Получить QR» и отсканируйте код в WhatsApp.
+                                    </Alert>
                                 )}
+                            </Stack>
+                        </Grid.Col>
 
-                                {!isAuthorized && qrText && (
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                            <Stack align="center" gap="md">
+                                {!isAuthorized && qrText ? (
                                     <Card withBorder radius="lg" p="md" ta="center">
                                         <Stack align="center" gap="sm">
-                                            <Text fw={600}>QR для WhatsApp</Text>
-                                            {qrRenderMode === 'image' ? (
-                                                <img
-                                                    src={qrText}
-                                                    alt="QR code"
-                                                    style={{ maxWidth: '100%', width: 260, height: 260, objectFit: 'contain' }}
-                                                />
-                                            ) : (
-                                                <QRCodeSVG value={qrText} size={240} includeMargin />
-                                            )}
+                                            <Text fw={600}>QR для авторизации WhatsApp</Text>
+                                            <QRCodeSVG value={qrText} size={240} includeMargin />
                                             <Divider w="100%" />
                                             <Text size="sm" c="dimmed">Статус проверяется каждые 5 секунд</Text>
                                         </Stack>
                                     </Card>
+                                ) : (
+                                    <EmptyState title={isAuthorized ? 'QR не требуется' : 'QR ещё не запрошен'} />
                                 )}
                             </Stack>
                         </Grid.Col>

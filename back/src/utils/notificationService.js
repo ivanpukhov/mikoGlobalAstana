@@ -1,4 +1,4 @@
-const { sendGreenMessage } = require('./greenApiService');
+const { sendBaileysMessage } = require('./baileysService');
 
 const formatPhoneNumber = (phoneNumber) => {
     const formattedNumber = phoneNumber.replace(/\D/g, ''); // Удаляем все, кроме цифр
@@ -11,7 +11,7 @@ const formatPhoneNumber = (phoneNumber) => {
 const sendNotification = async (phoneNumber, message, imageUrl = null) => {
     try {
         const formattedNumber = formatPhoneNumber(phoneNumber);
-        await sendGreenMessage({ phoneNumber: formattedNumber, message, imageUrl });
+        await sendBaileysMessage({ phoneNumber: formattedNumber, message, imageUrl });
         console.log('Уведомление отправлено на номер', formattedNumber);
     } catch (error) {
         console.error('Ошибка при отправке уведомления:', error.message || error);
