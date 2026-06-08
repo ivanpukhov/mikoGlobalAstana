@@ -116,7 +116,10 @@ const NotificationsPage = () => {
             }
 
             const qrValueRaw = String(data?.qrCode || data?.message || '').trim();
-            if (!qrValueRaw) { notifications.show({ color: 'yellow', message: 'QR пока недоступен. Проверьте состояние WhatsApp.' }); return; }
+            if (!qrValueRaw) {
+                notifications.show({ color: 'yellow', message: data?.error || 'QR пока недоступен. Проверьте состояние WhatsApp.' });
+                return;
+            }
 
             setQrText(qrValueRaw);
             setInstanceState(data?.stateInstance || 'qr');

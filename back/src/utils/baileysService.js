@@ -3,8 +3,8 @@ const path = require('path');
 const { NotificationSetting } = require('../models');
 
 const AUTH_DIR = process.env.BAILEYS_AUTH_DIR || path.join(__dirname, '../../database/baileys-auth');
-const QR_WAIT_TIMEOUT_MS = 20000;
-const OPEN_WAIT_TIMEOUT_MS = 25000;
+const QR_WAIT_TIMEOUT_MS = Number(process.env.BAILEYS_QR_WAIT_TIMEOUT_MS || 8000);
+const OPEN_WAIT_TIMEOUT_MS = Number(process.env.BAILEYS_OPEN_WAIT_TIMEOUT_MS || 15000);
 
 let socket = null;
 let startPromise = null;
@@ -28,6 +28,15 @@ const getBaileys = async () => {
         baileysPromise = import('baileys');
     }
     return baileysPromise;
+};
+
+const hasSavedCredentials = async () => {
+    try {
+        await fs.access(path.join(AUTH_DIR, 'creds.json'));
+        return true;
+    } catch {
+        return false;
+    }
 };
 
 const getSettings = async () => {
@@ -253,7 +262,24 @@ const getQr = async () => {
     }
 
     await startSocket();
-    const qr = await waitForQr();
+    let qr = null;
+    try {
+        qr = await waitForQr();
+    } catch (error) {
+        lastError = error.message || String(error);
+        if (!isAuthorized) {
+            closeSocket();
+            await persistState('notAuthorized', false);
+        }
+
+        return {
+            type: 'pending',
+            message: null,
+            qrCode: null,
+            qrImageUrl: null,
+            ...getStatePayload(),
+        };
+    }
 
     if (!qr && isAuthorized) {
         return { type: 'authorized', message: null, ...getStatePayload() };
@@ -291,6 +317,13 @@ const disconnectWhatsApp = async () => {
 };
 
 const sendBaileysMessage = async ({ phoneNumber, message, imageUrl = null }) => {
+    const hasCredentials = await hasSavedCredentials();
+
+    if (!isAuthorized && (!hasCredentials || ['qr', 'loggedOut', 'error'].includes(connectionState))) {
+        console.warn('Пропуск отправки WhatsApp: WhatsApp не авторизован.');
+        return false;
+    }
+
     await startSocket();
     const activeSocket = await waitForOpen();
 
@@ -305,6 +338,7 @@ const sendBaileysMessage = async ({ phoneNumber, message, imageUrl = null }) => 
         : { text: message };
 
     await activeSocket.sendMessage(chatId, payload);
+    return true;
 };
 
 module.exports = {

@@ -8,14 +8,20 @@ const formatPhoneNumber = (phoneNumber) => {
     return formattedNumber;
 };
 
-const sendNotification = async (phoneNumber, message, imageUrl = null) => {
+const sendNotification = (phoneNumber, message, imageUrl = null) => {
     try {
         const formattedNumber = formatPhoneNumber(phoneNumber);
-        await sendBaileysMessage({ phoneNumber: formattedNumber, message, imageUrl });
-        console.log('Уведомление отправлено на номер', formattedNumber);
+        sendBaileysMessage({ phoneNumber: formattedNumber, message, imageUrl })
+            .then((sent) => {
+                if (sent) {
+                    console.log('Уведомление отправлено на номер', formattedNumber);
+                }
+            })
+            .catch((error) => {
+                console.error('Ошибка при отправке уведомления:', error.message || error);
+            });
     } catch (error) {
         console.error('Ошибка при отправке уведомления:', error.message || error);
-        console.log(error);
     }
 };
 
