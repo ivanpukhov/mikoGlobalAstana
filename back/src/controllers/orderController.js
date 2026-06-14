@@ -199,12 +199,6 @@ const createOrder = async (req, res) => {
             await sendNotification(user.phoneNumber, cityMessage);
         }
 
-        scheduleFeedbackRequest({
-            orderId: order.id,
-            customerName,
-            customerPhone
-        });
-
         // Получение заказа с деталями
         const createdOrder = await Order.findByPk(order.id, {
             include: [
@@ -250,8 +244,17 @@ const updateOrderStatus = async (req, res) => {
 
         if (!order) return res.status(404).json({ error: 'Заказ не найден' });
 
+        const previousStatus = order.status;
         order.status = status;
         await order.save();
+
+        if (previousStatus !== status) {
+            scheduleFeedbackRequest({
+                orderId: order.id,
+                customerName: order.customerName,
+                customerPhone: order.customerPhone
+            });
+        }
 
         const clientMessage = await getRenderedTemplate(
             'order.statusUpdatedForCustomer',
