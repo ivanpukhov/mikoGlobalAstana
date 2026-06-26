@@ -14,6 +14,7 @@ import {
 } from '@mantine/core';
 import {
     IconCategory,
+    IconDiscount2,
     IconMapPin,
     IconSearch,
     IconShoppingCart,
@@ -79,6 +80,13 @@ export const AppHeader = ({ selectedCity, onOpenCityModal }) => {
                     <IconCategory size={20} stroke={2} />
                     <Text fw={600} fz="sm" c="white">
                         Каталог
+                    </Text>
+                </UnstyledButton>
+
+                <UnstyledButton component={Link} to="/sale" className={classes.saleBtn}>
+                    <IconDiscount2 size={20} stroke={2} />
+                    <Text fw={600} fz="sm" c="white">
+                        Уценка
                     </Text>
                 </UnstyledButton>
 

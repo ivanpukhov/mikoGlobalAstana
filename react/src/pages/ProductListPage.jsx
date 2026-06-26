@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+    Badge,
     Button,
     Card,
     Checkbox,
@@ -56,6 +57,7 @@ const ProductListPage = () => {
                 defaultPrice: p.prices[0]?.price || 0,
                 imageUrl: `/api${p.image}`,
                 isOffSale: Array.isArray(p.prices) && p.prices.length > 0 && p.prices.every((price) => price.availability === false),
+                isExpiringSoon: Boolean(p.isExpiringSoon),
             }));
             setProducts(transformed);
             const uniqueCategories = Array.from(
@@ -84,7 +86,12 @@ const ProductListPage = () => {
                     )
                     : true;
                 const matchesCategory = selectedCategory ? p.categoryId?.toString() === selectedCategory : true;
-                const matchesSaleStatus = saleStatusFilter === 'off-sale' ? p.isOffSale : true;
+                const matchesSaleStatus =
+                    saleStatusFilter === 'off-sale'
+                        ? p.isOffSale
+                        : saleStatusFilter === 'expiring'
+                        ? p.isExpiringSoon
+                        : true;
 
                 return matchesSearch && matchesCategory && matchesSaleStatus;
             }
@@ -175,6 +182,7 @@ const ProductListPage = () => {
                     onChange={(value) => setSaleStatusFilter(value || 'all')}
                     data={[
                         { value: 'all', label: 'Все товары' },
+                        { value: 'expiring', label: 'Уценка / сроки' },
                         { value: 'off-sale', label: 'Снятые с продажи' },
                     ]}
                     w={240}
@@ -226,6 +234,7 @@ const ProductListPage = () => {
                                 <Table.Th>Название</Table.Th>
                                 <Table.Th>Категория</Table.Th>
                                 <Table.Th>Подкатегория</Table.Th>
+                                <Table.Th>Статус</Table.Th>
                                 <Table.Th>Цена</Table.Th>
                                 <Table.Th>Действия</Table.Th>
                             </Table.Tr>
@@ -245,6 +254,13 @@ const ProductListPage = () => {
                                     <Table.Td fw={600}>{p.name}</Table.Td>
                                     <Table.Td>{p.categoryName || '—'}</Table.Td>
                                     <Table.Td>{p.subcategoryName || '—'}</Table.Td>
+                                    <Table.Td>
+                                        {p.isExpiringSoon ? (
+                                            <Badge color="orange" variant="light">Уценка</Badge>
+                                        ) : (
+                                            <Text size="sm" c="dimmed">—</Text>
+                                        )}
+                                    </Table.Td>
                                     <Table.Td>{formatCurrency(p.defaultPrice)}</Table.Td>
                                     <Table.Td>
                                         <Group gap="xs">
@@ -279,6 +295,9 @@ const ProductListPage = () => {
                                         <Stack gap={0}>
                                             <Text fw={700}>{p.name}</Text>
                                             <Text size="sm" c="dimmed">{p.categoryName || '—'} · {p.subcategoryName || '—'}</Text>
+                                            {p.isExpiringSoon && (
+                                                <Badge color="orange" variant="light" w="fit-content">Уценка · сроки</Badge>
+                                            )}
                                             <Text size="sm" fw={600}>{formatCurrency(p.defaultPrice)}</Text>
                                         </Stack>
                                         <Checkbox

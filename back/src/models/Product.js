@@ -14,6 +14,23 @@ const Product = sequelize.define('Product', {
     image: {
         type: DataTypes.STRING,
     },
+    isExpiringSoon: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    expiresAt: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+    },
+    shelfLifeMonths: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    expiryNote: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
 });
 
 

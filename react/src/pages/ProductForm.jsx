@@ -11,13 +11,16 @@ import {
     NumberInput,
     Select,
     Stack,
+    Switch,
     Text,
+    Textarea,
     TextInput,
     Title,
     useCombobox,
 } from '@mantine/core';
+import { DateInput } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
-import { IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
+import { IconDiscount2, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import 'react-quill/dist/quill.snow.css';
@@ -32,6 +35,16 @@ const quillModules = {
         ['link', 'image'],
         ['clean'],
     ],
+};
+
+const formatDateOnly = (value) => {
+    if (!value) {
+        return null;
+    }
+
+    const date = new Date(value);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 10);
 };
 
 const ProductForm = ({ initialValues = {}, productId = null }) => {
@@ -52,6 +65,10 @@ const ProductForm = ({ initialValues = {}, productId = null }) => {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(initialValues.imageUrl || '');
     const [newCategory, setNewCategory] = useState('');
+    const [isExpiringSoon, setIsExpiringSoon] = useState(Boolean(initialValues.isExpiringSoon));
+    const [expiresAt, setExpiresAt] = useState(initialValues.expiresAt ? new Date(initialValues.expiresAt) : null);
+    const [shelfLifeMonths, setShelfLifeMonths] = useState(initialValues.shelfLifeMonths || '');
+    const [expiryNote, setExpiryNote] = useState(initialValues.expiryNote || '');
 
     const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() });
 
@@ -76,8 +93,12 @@ const ProductForm = ({ initialValues = {}, productId = null }) => {
             setCityPrices(initialValues.cityPrices || []);
             setAttributes(initialValues.attributes || []);
             setImagePreview(initialValues.imageUrl || '');
+            setIsExpiringSoon(Boolean(initialValues.isExpiringSoon));
+            setExpiresAt(initialValues.expiresAt ? new Date(initialValues.expiresAt) : null);
+            setShelfLifeMonths(initialValues.shelfLifeMonths || '');
+            setExpiryNote(initialValues.expiryNote || '');
         }
-    }, [initialValues.name]);
+    }, [initialValues]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -121,6 +142,10 @@ const ProductForm = ({ initialValues = {}, productId = null }) => {
             cityPrices,
             description,
             attributes: attributes || [],
+            isExpiringSoon,
+            expiresAt: isExpiringSoon ? formatDateOnly(expiresAt) : null,
+            shelfLifeMonths: isExpiringSoon ? shelfLifeMonths || null : null,
+            expiryNote: isExpiringSoon ? expiryNote : null,
         };
 
         const formData = new FormData();
@@ -230,6 +255,58 @@ const ProductForm = ({ initialValues = {}, productId = null }) => {
                 max={100}
                 radius="md"
             />
+
+            <Card withBorder radius="lg" p="md">
+                <Stack gap="md">
+                    <Group justify="space-between" align="flex-start">
+                        <Stack gap={2}>
+                            <Group gap="xs">
+                                <IconDiscount2 size={18} />
+                                <Title order={5}>Уценка и подходящие сроки</Title>
+                            </Group>
+                            <Text size="sm" c="dimmed">
+                                Товар появится во вкладке уценки и получит стикер на карточке.
+                            </Text>
+                        </Stack>
+                        <Switch
+                            checked={isExpiringSoon}
+                            onChange={(event) => setIsExpiringSoon(event.currentTarget.checked)}
+                            color="orange"
+                            size="md"
+                        />
+                    </Group>
+
+                    <Group grow align="flex-start">
+                        <DateInput
+                            label="Срок годен до"
+                            value={expiresAt}
+                            onChange={setExpiresAt}
+                            clearable
+                            radius="md"
+                            disabled={!isExpiringSoon}
+                        />
+                        <NumberInput
+                            label="Полный срок хранения, мес."
+                            value={shelfLifeMonths}
+                            onChange={setShelfLifeMonths}
+                            min={1}
+                            max={120}
+                            radius="md"
+                            disabled={!isExpiringSoon}
+                        />
+                    </Group>
+
+                    <Textarea
+                        label="Заметка по сроку"
+                        placeholder="Например: остался 1 год из 3, упаковка целая"
+                        value={expiryNote}
+                        onChange={(event) => setExpiryNote(event.currentTarget.value)}
+                        minRows={2}
+                        radius="md"
+                        disabled={!isExpiringSoon}
+                    />
+                </Stack>
+            </Card>
 
             {/* Description with ReactQuill */}
             <Stack gap={4}>

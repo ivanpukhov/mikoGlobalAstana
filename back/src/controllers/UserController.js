@@ -107,6 +107,53 @@ class UserController {
         }
     }
 
+    static async me(req, res) {
+        try {
+            const user = await User.findByPk(req.user.id, {
+                include: { model: City, as: 'city' },
+                attributes: ['id', 'name', 'phoneNumber', 'cityId'],
+            });
+
+            if (!user) {
+                return res.status(401).json({ message: 'Пользователь токена не найден.', error: 'Недействительный токен.' });
+            }
+
+            res.status(200).json({ user });
+        } catch (error) {
+            console.error('Ошибка проверки токена:', error);
+            res.status(500).json({ message: 'Ошибка сервера.' });
+        }
+    }
+
+    static async refresh(req, res) {
+        try {
+            const user = await User.findByPk(req.user.id);
+
+            if (!user) {
+                return res.status(401).json({ message: 'Пользователь токена не найден.', error: 'Недействительный токен.' });
+            }
+
+            const token = jwt.sign(
+                { id: user.id, phoneNumber: user.phoneNumber },
+                JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            res.status(200).json({
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    phoneNumber: user.phoneNumber,
+                    cityId: user.cityId,
+                },
+            });
+        } catch (error) {
+            console.error('Ошибка обновления токена:', error);
+            res.status(500).json({ message: 'Ошибка сервера.' });
+        }
+    }
+
     static async create(req, res) {
         try {
             const { phoneNumber, cityId, name } = req.body;

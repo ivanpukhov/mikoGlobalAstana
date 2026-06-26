@@ -112,6 +112,16 @@ export const ProductCard = ({ product, mode = 'default', onQuantityChange }) => 
                 </Link>
 
                 <Stack gap={4} className={classes.badges}>
+                    {product.isExpiringSoon && (
+                        <>
+                            <Badge color="orange" size="sm">
+                                Уценка
+                            </Badge>
+                            <Badge color="yellow" size="sm" variant="filled">
+                                Подходящие сроки
+                            </Badge>
+                        </>
+                    )}
                     {discountPercent > 0 && (
                         <Badge color="red" size="sm">
                             −{discountPercent}%

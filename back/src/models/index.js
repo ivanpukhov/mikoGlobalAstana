@@ -15,6 +15,8 @@ const NotificationSetting = require('./NotificationSetting');
 const NotificationTemplate = require('./NotificationTemplate');
 const OrderGiftRule = require('./OrderGiftRule');
 const Banner = require('./Banner');
+const AnalyticsSession = require('./AnalyticsSession');
+const AnalyticsEvent = require('./AnalyticsEvent');
 
 // Ассоциации
 Category.hasMany(Subcategory, { foreignKey: 'categoryId', as: 'subcategories' });
@@ -39,6 +41,12 @@ ProductPrice.belongsTo(City, { foreignKey: 'cityId', as: 'city' });
 Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'items' });
 OrderItem.belongsTo(Order, { foreignKey: 'orderId', as: 'order' });
 
+AnalyticsSession.hasMany(AnalyticsEvent, {
+    foreignKey: 'sessionId',
+    sourceKey: 'sessionId',
+    as: 'events',
+});
+
 
 
 module.exports = {
@@ -59,4 +67,6 @@ module.exports = {
     NotificationTemplate,
     OrderGiftRule,
     Banner,
+    AnalyticsSession,
+    AnalyticsEvent,
 };

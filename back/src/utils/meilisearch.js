@@ -14,6 +14,10 @@ const indexProducts = async () => {
         category: product.category?.name,
         subcategory: product.subcategory?.name,
         price: product.prices?.[0]?.price || 0,
+        discount: product.prices?.[0]?.discount || 0,
+        isExpiringSoon: product.isExpiringSoon,
+        expiresAt: product.expiresAt,
+        expiryNote: product.expiryNote,
     }));
 
     await index.addDocuments(documents);

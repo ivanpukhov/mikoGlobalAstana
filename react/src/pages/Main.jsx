@@ -17,6 +17,7 @@ import { ProductGrid } from '../components/ProductGrid/ProductGrid';
 export const Main = () => {
     const [categories, setCategories] = useState([]);
     const [productsByCategory, setProductsByCategory] = useState({});
+    const [expiringProducts, setExpiringProducts] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [city] = useState(() => {
@@ -46,7 +47,10 @@ export const Main = () => {
         api.get(`/products/${city.id}/products`)
             .then(({ data }) => {
                 if (cancelled) return;
-                const grouped = (Array.isArray(data) ? data : []).reduce((acc, product) => {
+                const products = Array.isArray(data) ? data : [];
+                setExpiringProducts(products.filter((product) => product.isExpiringSoon).slice(0, 12));
+
+                const grouped = products.reduce((acc, product) => {
                     const categoryId = product.categoryId;
                     if (!acc[categoryId]) acc[categoryId] = [];
                     if (acc[categoryId].length < 12) acc[categoryId].push(product);
@@ -108,16 +112,29 @@ export const Main = () => {
                     <ProductGrid loading skeletonCount={12} />
                 </Box>
             ) : (
-                categoryIds.map((categoryId) => (
-                    <Box key={categoryId} mt="xl">
-                        <SectionHeader
-                            title={getCategoryName(categoryId)}
-                            to={`/catalog/${categoryId}`}
-                            linkLabel="Все товары"
-                        />
-                        <ProductGrid products={productsByCategory[categoryId]} />
-                    </Box>
-                    ))
+                <>
+                    {expiringProducts.length > 0 && (
+                        <Box mt="xl">
+                            <SectionHeader
+                                title="Уценка · подходящие сроки"
+                                to="/sale"
+                                linkLabel="Все товары"
+                            />
+                            <ProductGrid products={expiringProducts} />
+                        </Box>
+                    )}
+
+                    {categoryIds.map((categoryId) => (
+                        <Box key={categoryId} mt="xl">
+                            <SectionHeader
+                                title={getCategoryName(categoryId)}
+                                to={`/catalog/${categoryId}`}
+                                linkLabel="Все товары"
+                            />
+                            <ProductGrid products={productsByCategory[categoryId]} />
+                        </Box>
+                        ))}
+                </>
             )}
         </Container>
     );

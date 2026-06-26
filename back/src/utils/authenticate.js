@@ -11,7 +11,12 @@ const authenticate = (req, res, next) => {
         req.user = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
         return next();
     } catch (error) {
-        return res.status(401).json({ message: 'Недействительный токен.', error: 'Недействительный токен.' });
+        const isExpired = error.name === 'TokenExpiredError';
+        return res.status(401).json({
+            message: isExpired ? 'Срок действия токена истёк.' : 'Недействительный токен.',
+            error: isExpired ? 'Токен истёк.' : 'Недействительный токен.',
+            code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID',
+        });
     }
 };
 

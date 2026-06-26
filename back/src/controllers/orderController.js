@@ -1,10 +1,11 @@
 // controllers/orderController.js
-const {Order, OrderItem, Product, City, User, PromoCode, PurchasedCertificate} = require('../models');
+const {Order, OrderItem, Product, City, User, PromoCode, PurchasedCertificate, AnalyticsEvent} = require('../models');
 const {sequelize} = require('../models');
 const {Op, fn, col, literal} = require('sequelize');
 const moment = require("moment");
 const sendNotification = require('../utils/notificationService');
 const { getRenderedTemplate } = require('../utils/templateService');
+const { normalizeAttribution } = require('./analyticsController');
 
 const FEEDBACK_DELAY_MS = Number(process.env.ORDER_FEEDBACK_DELAY_MS || 10 * 60 * 1000);
 
@@ -55,7 +56,8 @@ const createOrder = async (req, res) => {
         items,
         totalAmount,
         promoCodeName,
-        giftCertificateCode
+        giftCertificateCode,
+        analytics
     } = req.body;
 
     if (!cityId) return res.status(400).json({ error: 'Город обязателен для заказа.' });
@@ -100,6 +102,7 @@ const createOrder = async (req, res) => {
         }
 
         // Создание заказа
+        const normalizedAttribution = normalizeAttribution(analytics?.attribution || {}, req);
         const order = await Order.create({
             customerName,
             customerPhone,
@@ -110,7 +113,22 @@ const createOrder = async (req, res) => {
             totalAmount: finalTotalAmount,
             promoCodeId: appliedPromoCode ? appliedPromoCode.id : null,
             giftCertificateCode: usedGiftCertificate ? usedGiftCertificate.code : null,
-            status: null // статус создается пустым
+            status: null, // статус создается пустым
+            analyticsSessionId: analytics?.sessionId || null,
+            analyticsClientId: analytics?.clientId || null,
+            attributionSource: normalizedAttribution.source,
+            attributionMedium: normalizedAttribution.medium,
+            attributionCampaign: normalizedAttribution.campaign,
+            attributionContent: normalizedAttribution.content,
+            attributionTerm: normalizedAttribution.term,
+            landingPage: normalizedAttribution.landingPage,
+            referrer: normalizedAttribution.referrer,
+            gclid: normalizedAttribution.gclid,
+            gbraid: normalizedAttribution.gbraid,
+            wbraid: normalizedAttribution.wbraid,
+            yclid: normalizedAttribution.yclid,
+            fbclid: normalizedAttribution.fbclid,
+            ttclid: normalizedAttribution.ttclid,
         }, { transaction });
 
         let orderedItemsDetails = [];
@@ -135,6 +153,25 @@ const createOrder = async (req, res) => {
         }
 
         await transaction.commit();
+
+        if (order.analyticsSessionId && order.analyticsClientId) {
+            AnalyticsEvent.create({
+                sessionId: order.analyticsSessionId,
+                clientId: order.analyticsClientId,
+                eventName: 'order_created',
+                path: '/cart',
+                orderId: order.id,
+                metadata: {
+                    totalAmount: finalTotalAmount,
+                    cityId,
+                    itemsCount: items.length,
+                    source: normalizedAttribution.source,
+                    campaign: normalizedAttribution.campaign,
+                },
+            }).catch((error) => {
+                console.error(`Ошибка записи аналитики заказа #${order.id}:`, error.message || error);
+            });
+        }
 
         // Формирование сообщения с деталями
         const itemsDetailsText = orderedItemsDetails.map(
@@ -470,10 +507,8 @@ const getOrderStatistics = async (req, res) => {
     }
 
     try {
-        const timezone = 'Asia/Almaty';
-
-        const startMoment = moment.tz(startDate, timezone);
-        const endMoment = moment.tz(endDate, timezone);
+        const startMoment = moment(startDate);
+        const endMoment = moment(endDate);
 
         const where = {
             createdAt: {

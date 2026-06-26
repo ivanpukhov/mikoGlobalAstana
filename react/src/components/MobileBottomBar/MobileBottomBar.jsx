@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { Box, Indicator, Stack, Text } from '@mantine/core';
-import { IconCategory, IconHome, IconShoppingCart } from '@tabler/icons-react';
+import { IconCategory, IconDiscount2, IconHome, IconShoppingCart } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
 import classes from './MobileBottomBar.module.css';
 
 const items = [
     { to: '/', label: 'Главная', icon: IconHome, end: true },
     { to: '/categories', label: 'Каталог', icon: IconCategory },
+    { to: '/sale', label: 'Уценка', icon: IconDiscount2 },
     { to: '/cart', label: 'Корзина', icon: IconShoppingCart, badge: 'cart' },
 ];
 

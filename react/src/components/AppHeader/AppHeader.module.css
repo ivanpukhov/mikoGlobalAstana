@@ -22,7 +22,8 @@
     filter: brightness(0) invert(1);
 }
 
-.catalogBtn {
+.catalogBtn,
+.saleBtn {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -36,9 +37,14 @@
     white-space: nowrap;
 }
 
-.catalogBtn:hover {
+.catalogBtn:hover,
+.saleBtn:hover {
     background: rgba(255, 255, 255, 0.28);
     transform: translateY(-1px);
+}
+
+.saleBtn {
+    background: rgba(255, 160, 0, 0.24);
 }
 
 .search {
@@ -68,7 +74,8 @@
 }
 
 @media (max-width: 62em) {
-    .catalogBtn {
+    .catalogBtn,
+    .saleBtn {
         display: none;
     }
 

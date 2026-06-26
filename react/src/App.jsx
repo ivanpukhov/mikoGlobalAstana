@@ -20,6 +20,7 @@ import ProductDetailsPage from './pages/ProductDetailsPage';
 import CategoryManagementPage from './pages/CategoryManagementPage';
 import BannerManagementPage from './pages/BannerManagementPage';
 import OrderGiftRulesPage from './pages/OrderGiftRulesPage';
+import ExpiringProductsPage from './pages/ExpiringProductsPage';
 import LoginPage from './pages/LoginPage';
 import UsersPage from './pages/UsersPage';
 import UserCreatePage from './pages/UserCreatePage';
@@ -37,6 +38,7 @@ import { AppHeader } from './components/AppHeader/AppHeader';
 import { DesktopFooter } from './components/DesktopFooter/DesktopFooter';
 import { MobileBottomBar } from './components/MobileBottomBar/MobileBottomBar';
 import { CityModal } from './components/CityModal/CityModal';
+import { useAnalyticsPageTracking } from './hooks/useAnalyticsPageTracking';
 
 function App() {
     const [selectedCity, setSelectedCity] = useState(null);
@@ -45,6 +47,7 @@ function App() {
 
     const location = useLocation();
     const isAdminRoute = location.pathname.startsWith('/admin');
+    useAnalyticsPageTracking(!isAdminRoute);
 
     useEffect(() => {
         const savedCity = localStorage.getItem('selectedCity');
@@ -118,6 +121,7 @@ function App() {
                         <Route path="/gift/:id" element={<GiftValidate />} />
                         <Route path="/product/:id" element={<Product />} />
                         <Route path="/gift-certificates" element={<GiftCertificatesShop />} />
+                        <Route path="/sale" element={<ExpiringProductsPage />} />
                         <Route path="/catalog" element={<Catalog />} />
                         <Route path="/catalog/:categoryId" element={<Catalog />} />
                         <Route path="/cart" element={<Cart />} />

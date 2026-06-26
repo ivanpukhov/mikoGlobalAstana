@@ -14,6 +14,7 @@ const giftCertificateRoutes = require('./routes/giftCertificateRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const orderGiftRuleRoutes = require('./routes/orderGiftRuleRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 const { seedDefaultOrderGiftRules } = require('./controllers/orderGiftRuleController');
 
 const purchasedCertificateRoutes = require('./routes/purchasedCertificateRoutes');
@@ -34,23 +35,70 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/order-gift-rules', orderGiftRuleRoutes);
 app.use('/api/banners', bannerRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
-const ensureCategoryIconColumn = async () => {
+const ensureColumns = async (tableName, columns) => {
     const queryInterface = sequelize.getQueryInterface();
-    const tableDescription = await queryInterface.describeTable('Categories');
+    const tableDescription = await queryInterface.describeTable(tableName);
 
-    if (!tableDescription.icon) {
-        await queryInterface.addColumn('Categories', 'icon', {
-            type: DataTypes.STRING,
-            allowNull: true,
-        });
+    for (const [columnName, definition] of Object.entries(columns)) {
+        if (!tableDescription[columnName]) {
+            await queryInterface.addColumn(tableName, columnName, definition);
+        }
     }
 };
+
+const ensureCategoryIconColumn = () => ensureColumns('Categories', {
+    icon: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+});
+
+const ensureProductMarketingColumns = () => ensureColumns('Products', {
+    isExpiringSoon: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    expiresAt: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+    },
+    shelfLifeMonths: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    expiryNote: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+});
+
+const ensureOrderAttributionColumns = () => ensureColumns('Orders', {
+    analyticsSessionId: { type: DataTypes.STRING, allowNull: true },
+    analyticsClientId: { type: DataTypes.STRING, allowNull: true },
+    attributionSource: { type: DataTypes.STRING, allowNull: true },
+    attributionMedium: { type: DataTypes.STRING, allowNull: true },
+    attributionCampaign: { type: DataTypes.STRING, allowNull: true },
+    attributionContent: { type: DataTypes.STRING, allowNull: true },
+    attributionTerm: { type: DataTypes.STRING, allowNull: true },
+    landingPage: { type: DataTypes.TEXT, allowNull: true },
+    referrer: { type: DataTypes.TEXT, allowNull: true },
+    gclid: { type: DataTypes.STRING, allowNull: true },
+    gbraid: { type: DataTypes.STRING, allowNull: true },
+    wbraid: { type: DataTypes.STRING, allowNull: true },
+    yclid: { type: DataTypes.STRING, allowNull: true },
+    fbclid: { type: DataTypes.STRING, allowNull: true },
+    ttclid: { type: DataTypes.STRING, allowNull: true },
+});
 // Синхронизация базы данных и индексация
 (async () => {
     try {
         await sequelize.sync();
         await ensureCategoryIconColumn();
+        await ensureProductMarketingColumns();
+        await ensureOrderAttributionColumns();
         await seedDefaultOrderGiftRules();
         console.log('База данных синхронизирована.');
         await indexProducts();

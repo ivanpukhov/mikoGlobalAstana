@@ -30,6 +30,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/api';
+import { trackEvent } from '../../utils/analytics';
 import { formatCurrency } from '../../utils/formatters';
 import placeholder from '../../images/products/i.jpg';
 import styles from './Product.module.scss';
@@ -72,6 +73,11 @@ export const Product = () => {
         }
         localStorage.setItem('cart', JSON.stringify(cart));
         setCartQ(newQuantity);
+        trackEvent(newQuantity > 0 ? 'cart_quantity_changed' : 'remove_from_cart', {
+            productId: product.id,
+            productName: product.name,
+            quantity: newQuantity,
+        });
     };
 
     const downloadQR = () => {
@@ -127,6 +133,11 @@ export const Product = () => {
                                 -{discount}%
                             </Badge>
                         )}
+                        {product.isExpiringSoon && (
+                            <Badge color="orange" pos="absolute" top={10} right={10} size="lg">
+                                Уценка · сроки
+                            </Badge>
+                        )}
                     </Box>
 
                     {/* Price block */}
@@ -143,6 +154,22 @@ export const Product = () => {
                             </Text>
                         </Group>
                     </Paper>
+
+                    {product.isExpiringSoon && (
+                        <Paper p="md" radius="md" bg="orange.0" mt="sm" withBorder>
+                            <Stack gap={4}>
+                                <Text fw={700} c="orange.8">Подходящие сроки</Text>
+                                <Text size="sm">
+                                    {product.expiresAt
+                                        ? `Срок годен до ${new Date(product.expiresAt).toLocaleDateString('ru-RU')}`
+                                        : 'Товар из раздела уценки по срокам.'}
+                                </Text>
+                                {product.expiryNote && (
+                                    <Text size="sm" c="dimmed">{product.expiryNote}</Text>
+                                )}
+                            </Stack>
+                        </Paper>
+                    )}
 
                     {/* Cart controls */}
                     <Stack gap="sm" mt="md">

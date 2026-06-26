@@ -25,6 +25,7 @@ import {
 } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../images/logo-admin.svg';
+import api, { clearAdminSession } from '../api/api';
 
 const NAV_ITEMS = [
     { to: '/admin/products',                icon: IconBuildingStore, label: 'Товары' },
@@ -46,20 +47,51 @@ const AdminLayout = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const navigate = useNavigate();
     const location = useLocation();
-    const token = localStorage.getItem('token');
     const adminName = localStorage.getItem('adminName');
 
     useEffect(() => {
-        if (!token) navigate('/admin/login');
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, [token, navigate]);
+
+        const validateSession = async () => {
+            const currentToken = localStorage.getItem('token');
+
+            if (!currentToken) {
+                clearAdminSession(false);
+                navigate('/admin/login', { replace: true });
+                return;
+            }
+
+            try {
+                const [{ data: meData }, { data: refreshData }] = await Promise.all([
+                    api.get('/users/me'),
+                    api.post('/users/refresh'),
+                ]);
+
+                const user = refreshData.user || meData.user;
+                if (refreshData.token) localStorage.setItem('token', refreshData.token);
+                if (user?.name) localStorage.setItem('adminName', user.name);
+                if (user?.cityId !== undefined && user?.cityId !== null) {
+                    localStorage.setItem('adminCity', user.cityId);
+                }
+                if (user?.phoneNumber) localStorage.setItem('phoneNumber', user.phoneNumber);
+            } catch {
+                clearAdminSession(false);
+                navigate('/admin/login', { replace: true });
+            }
+        };
+
+        validateSession();
+        const authTimer = setInterval(validateSession, 5 * 60 * 1000);
+
+        return () => {
+            clearInterval(timer);
+            clearInterval(authTimer);
+        };
+    }, [navigate]);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('adminName');
-        localStorage.removeItem('adminCity');
-        navigate('/admin/login');
+        clearAdminSession(false);
+        navigate('/admin/login', { replace: true });
     };
 
     return (

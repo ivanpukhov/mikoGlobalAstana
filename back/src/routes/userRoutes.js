@@ -1,27 +1,14 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const UserController = require('../controllers/UserController');
+const authenticate = require('../utils/authenticate');
 
 const router = express.Router();
-
-// Middleware для проверки токена
-const authenticate = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(403).json({ message: 'Токен отсутствует.', error: 'Токен отсутствует.' });
-    }
-
-    try {
-        req.user = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
-        return next();
-    } catch {
-        return res.status(401).json({ message: 'Недействительный токен.', error: 'Недействительный токен.' });
-    }
-};
 
 // Роуты для пользователей
 router.post('/register', UserController.register); // Регистрация нового пользователя
 router.post('/login', UserController.login); // Авторизация пользователя
+router.get('/me', authenticate, UserController.me); // Проверка текущего токена
+router.post('/refresh', authenticate, UserController.refresh); // Обновление текущего токена
 router.post('/create', authenticate, UserController.create); // Создание нового пользователя авторизованным пользователем
 router.get('/:id', authenticate, UserController.getById); // Получение информации о пользователе по ID
 router.get('/', authenticate, UserController.getAll); // Получение списка всех пользователей

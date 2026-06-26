@@ -14,6 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import api from '../api/api';
+import { getOrderSource, getSourceColor, getSourceLabel } from '../utils/attribution';
 import { formatCurrency } from '../utils/formatters';
 
 const STATUS_BUTTONS = [
@@ -44,6 +45,7 @@ const OrdersPage = () => {
     const [loading, setLoading] = useState(false);
     const [deliveryMethod, setDeliveryMethod] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState(null);
+    const [sourceFilter, setSourceFilter] = useState(null);
     const [status, setStatus] = useState('all');
     const [period, setPeriod] = useState('today');
     const navigate = useNavigate();
@@ -61,6 +63,7 @@ const OrdersPage = () => {
 
         if (deliveryMethod) filtered = filtered.filter((o) => o.deliveryMethod === deliveryMethod);
         if (paymentMethod) filtered = filtered.filter((o) => o.paymentMethod === paymentMethod);
+        if (sourceFilter) filtered = filtered.filter((o) => getOrderSource(o) === sourceFilter);
 
         if (status !== 'all') {
             filtered = status === null
@@ -85,7 +88,12 @@ const OrdersPage = () => {
         }
 
         return filtered;
-    }, [allOrders, deliveryMethod, paymentMethod, status, period]);
+    }, [allOrders, deliveryMethod, paymentMethod, sourceFilter, status, period]);
+
+    const sourceOptions = useMemo(() => {
+        const sources = Array.from(new Set(allOrders.map(getOrderSource))).filter(Boolean);
+        return sources.map((source) => ({ value: source, label: getSourceLabel(source) }));
+    }, [allOrders]);
 
     return (
         <Stack gap="md">
@@ -157,6 +165,16 @@ const OrdersPage = () => {
                     radius="md"
                     size="sm"
                 />
+                <Select
+                    placeholder="Источник"
+                    value={sourceFilter}
+                    onChange={setSourceFilter}
+                    clearable
+                    data={sourceOptions}
+                    w={220}
+                    radius="md"
+                    size="sm"
+                />
             </Group>
 
             {loading ? (
@@ -168,6 +186,7 @@ const OrdersPage = () => {
                         <Table.Tr>
                             <Table.Th>Клиент</Table.Th>
                             <Table.Th>Телефон</Table.Th>
+                            <Table.Th>Источник</Table.Th>
                             <Table.Th>Город</Table.Th>
                             <Table.Th>Сумма</Table.Th>
                             <Table.Th>Дата</Table.Th>
@@ -175,48 +194,64 @@ const OrdersPage = () => {
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                        {orders.map((order) => (
-                            <Table.Tr
-                                key={order.id}
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => navigate(`/admin/orders/${order.id}`)}
-                            >
-                                <Table.Td fw={600}>{order.customerName || 'Не указано'}</Table.Td>
-                                <Table.Td>{order.customerPhone}</Table.Td>
-                                <Table.Td>{order.city?.name || '—'}</Table.Td>
-                                <Table.Td>{formatCurrency(order.totalAmount)}</Table.Td>
-                                <Table.Td>{dayjs(order.createdAt).format('DD.MM.YYYY')}</Table.Td>
-                                <Table.Td>
-                                    <Badge color={statusColor(order.status)} variant="light" size="sm">
-                                        {order.status || 'Новый'}
-                                    </Badge>
-                                </Table.Td>
-                            </Table.Tr>
-                        ))}
+                        {orders.map((order) => {
+                            const source = getOrderSource(order);
+
+                            return (
+                                <Table.Tr
+                                    key={order.id}
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                >
+                                    <Table.Td fw={600}>{order.customerName || 'Не указано'}</Table.Td>
+                                    <Table.Td>{order.customerPhone}</Table.Td>
+                                    <Table.Td>
+                                        <Badge color={getSourceColor(source)} variant="light" size="sm">
+                                            {getSourceLabel(source)}
+                                        </Badge>
+                                    </Table.Td>
+                                    <Table.Td>{order.city?.name || '—'}</Table.Td>
+                                    <Table.Td>{formatCurrency(order.totalAmount)}</Table.Td>
+                                    <Table.Td>{dayjs(order.createdAt).format('DD.MM.YYYY')}</Table.Td>
+                                    <Table.Td>
+                                        <Badge color={statusColor(order.status)} variant="light" size="sm">
+                                            {order.status || 'Новый'}
+                                        </Badge>
+                                    </Table.Td>
+                                </Table.Tr>
+                            );
+                        })}
                     </Table.Tbody>
                 </Table>
                 <Stack gap="sm" hiddenFrom="sm">
-                    {orders.map((order) => (
-                        <Card
-                            key={order.id}
-                            withBorder
-                            radius="xl"
-                            p="md"
-                            onClick={() => navigate(`/admin/orders/${order.id}`)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            <Stack gap="xs">
-                                <Text fw={700}>{order.customerName || 'Не указано'}</Text>
-                                <Text size="sm">{order.customerPhone}</Text>
-                                <Text size="sm" c="dimmed">{order.city?.name || '—'}</Text>
-                                <Text size="sm">{formatCurrency(order.totalAmount)}</Text>
-                                <Text size="sm" c="dimmed">{dayjs(order.createdAt).format('DD.MM.YYYY')}</Text>
-                                <Badge color={statusColor(order.status)} variant="light" w="fit-content" size="sm">
-                                    {order.status || 'Новый'}
-                                </Badge>
-                            </Stack>
-                        </Card>
-                    ))}
+                    {orders.map((order) => {
+                        const source = getOrderSource(order);
+
+                        return (
+                            <Card
+                                key={order.id}
+                                withBorder
+                                radius="xl"
+                                p="md"
+                                onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <Stack gap="xs">
+                                    <Text fw={700}>{order.customerName || 'Не указано'}</Text>
+                                    <Text size="sm">{order.customerPhone}</Text>
+                                    <Badge color={getSourceColor(source)} variant="light" w="fit-content" size="sm">
+                                        {getSourceLabel(source)}
+                                    </Badge>
+                                    <Text size="sm" c="dimmed">{order.city?.name || '—'}</Text>
+                                    <Text size="sm">{formatCurrency(order.totalAmount)}</Text>
+                                    <Text size="sm" c="dimmed">{dayjs(order.createdAt).format('DD.MM.YYYY')}</Text>
+                                    <Badge color={statusColor(order.status)} variant="light" w="fit-content" size="sm">
+                                        {order.status || 'Новый'}
+                                    </Badge>
+                                </Stack>
+                            </Card>
+                        );
+                    })}
                 </Stack>
                 </>
             )}

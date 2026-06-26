@@ -25,6 +25,10 @@ const ProductEditPage = () => {
                 })) || [],
                 imageUrl: `/api${data.image}`,
                 attributes: data.attributes?.map((a) => ({ name: a.name, value: a.value })) || [],
+                isExpiringSoon: data.isExpiringSoon,
+                expiresAt: data.expiresAt,
+                shelfLifeMonths: data.shelfLifeMonths,
+                expiryNote: data.expiryNote,
             });
         }).catch(console.error);
     }, [id]);

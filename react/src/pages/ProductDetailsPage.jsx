@@ -138,6 +138,35 @@ const ProductDetailsPage = () => {
                 />
                 <Stack p="xl" gap="md">
                     <Title order={3} ta="center">{product.name}</Title>
+                    {product.isExpiringSoon && (
+                        <div
+                            style={{
+                                padding: 16,
+                                borderRadius: 12,
+                                background: 'var(--mantine-color-orange-0)',
+                                border: '1px solid var(--mantine-color-orange-2)',
+                            }}
+                        >
+                            <Group justify="space-between" align="flex-start">
+                                <Stack gap={2}>
+                                    <Badge color="orange" variant="filled" w="fit-content">
+                                        Уценка · подходящие сроки
+                                    </Badge>
+                                    <Text size="sm" fw={600}>
+                                        {product.expiresAt
+                                            ? `Срок годен до ${new Date(product.expiresAt).toLocaleDateString('ru-RU')}`
+                                            : 'Дата окончания срока не указана'}
+                                    </Text>
+                                    {product.shelfLifeMonths && (
+                                        <Text size="sm" c="dimmed">Полный срок хранения: {product.shelfLifeMonths} мес.</Text>
+                                    )}
+                                    {product.expiryNote && (
+                                        <Text size="sm">{product.expiryNote}</Text>
+                                    )}
+                                </Stack>
+                            </Group>
+                        </div>
+                    )}
                     <div
                         dangerouslySetInnerHTML={{ __html: product.description }}
                         style={{ color: 'var(--mantine-color-dimmed)' }}

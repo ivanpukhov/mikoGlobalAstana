@@ -18,6 +18,7 @@ import { IconShoppingCartOff, IconTag, IconTruck } from '@tabler/icons-react';
 import { CartList } from './CartList';
 import api from '../../api/api';
 import { EmptyState } from '../../components/ui';
+import { getAnalyticsPayload } from '../../utils/analytics';
 import { formatCurrency } from '../../utils/formatters';
 
 export const Cart = () => {
@@ -164,6 +165,7 @@ export const Cart = () => {
             totalAmount: totalPrice,
             promoCodeName: promoData ? promoData.name : null,
             giftCertificateCode: giftData ? localStorage.getItem('gift') : null,
+            analytics: getAnalyticsPayload(),
         };
 
         try {

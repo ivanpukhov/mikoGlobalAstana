@@ -136,6 +136,38 @@ const findOrCreateSubcategory = async (categoryId, rawName, options = {}) => {
     return Subcategory.create({ name: normalizedName, categoryId }, { transaction });
 };
 
+const normalizeExpiryFields = (productData = {}) => {
+    const shelfLifeMonths = Number(productData.shelfLifeMonths);
+
+    return {
+        isExpiringSoon: Boolean(productData.isExpiringSoon),
+        expiresAt: productData.expiresAt || null,
+        shelfLifeMonths: Number.isFinite(shelfLifeMonths) && shelfLifeMonths > 0 ? shelfLifeMonths : null,
+        expiryNote: productData.expiryNote || null,
+    };
+};
+
+const getIndexedProductDocument = ({
+    product,
+    category,
+    subcategory,
+    price = 0,
+    discount = 0,
+    attributes = [],
+}) => ({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    category: category?.name,
+    subcategory: subcategory?.name,
+    price,
+    discount,
+    isExpiringSoon: product.isExpiringSoon,
+    expiresAt: product.expiresAt,
+    expiryNote: product.expiryNote,
+    attributes: attributes.map(attr => ({ name: attr.name, value: attr.value })),
+});
+
 // Получение всех товаров
 const getAllProducts = async (req, res) => {
     try {
@@ -189,6 +221,7 @@ const createProducts = async (req, res) => {
             const {
                 name, description, categoryName, subcategoryName, defaultPrice, cityPrices, image, attributes, defaultDiscount = 0
             } = productData;
+            const expiryFields = normalizeExpiryFields(productData);
 
             const parsedCityPrices = Array.isArray(cityPrices) ? cityPrices : [];
             const parsedAttributes = Array.isArray(attributes) ? attributes : [];
@@ -205,6 +238,7 @@ const createProducts = async (req, res) => {
                 categoryId: category.id,
                 subcategoryId: subcategory.id,
                 image: imagePath,
+                ...expiryFields,
             });
 
             const cities = await City.findAll();
@@ -232,16 +266,14 @@ const createProducts = async (req, res) => {
 
             // Индексируем продукт в Meilisearch
             const index = client.index('products');
-            await index.addDocuments([{
-                id: product.id,
-                name: product.name,
-                description: product.description,
-                category: category.name,
-                subcategory: subcategory.name,
+            await index.addDocuments([getIndexedProductDocument({
+                product,
+                category,
+                subcategory,
                 price: defaultPrice,
                 discount: defaultDiscount,
-                attributes: createdAttributes.map(attr => ({ name: attr.name, value: attr.value })), // Добавляем атрибуты в индекс
-            }]);
+                attributes: createdAttributes,
+            })]);
 
             createdProducts.push({
                 ...product.toJSON(),
@@ -450,6 +482,30 @@ const getProductsByCity = async (req, res) => {
     }
 };
 
+const getExpiringProductsByCity = async (req, res) => {
+    const { cityId } = req.params;
+
+    try {
+        const products = await Product.findAll({
+            where: { isExpiringSoon: true },
+            include: {
+                model: ProductPrice,
+                as: 'prices',
+                where: { cityId, availability: true },
+                attributes: ['price', 'discount', [sequelize.literal('price - (price * discount / 100)'), 'discountedPrice']],
+            },
+            order: [
+                ['expiresAt', 'ASC'],
+                ['updatedAt', 'DESC'],
+            ],
+        });
+
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 const searchProductsByCity = async (req, res) => {
     const { query, cityId } = req.query;
 
@@ -590,6 +646,7 @@ const createProductsJson = async (req, res) => {
             const {
                 name, description, categoryName, subcategoryName, defaultPrice, cityPrices, image, defaultDiscount = 0, attributes
             } = productData;
+            const expiryFields = normalizeExpiryFields(productData);
 
             const parsedCityPrices = Array.isArray(cityPrices) ? cityPrices : [];
             const parsedAttributes = Array.isArray(attributes) ? attributes : [];
@@ -606,6 +663,7 @@ const createProductsJson = async (req, res) => {
                 categoryId: category.id,
                 subcategoryId: subcategory.id,
                 image: imagePath,
+                ...expiryFields,
             });
 
             const cities = await City.findAll();
@@ -630,16 +688,14 @@ const createProductsJson = async (req, res) => {
             }
 
             const index = client.index('products');
-            await index.addDocuments([{
-                id: product.id,
-                name: product.name,
-                description: product.description,
-                category: category.name,
-                subcategory: subcategory.name,
+            await index.addDocuments([getIndexedProductDocument({
+                product,
+                category,
+                subcategory,
                 price: defaultPrice,
                 discount: defaultDiscount,
-                attributes: createdAttributes.map(attr => ({ name: attr.name, value: attr.value })),
-            }]);
+                attributes: createdAttributes,
+            })]);
 
             createdProducts.push({
                 ...product.toJSON(),
@@ -694,6 +750,7 @@ const updateProduct = async (req, res) => {
         product.categoryId = category.id;
         product.subcategoryId = subcategory.id;
         product.image = image ? `/uploads/${image.filename}` : product.image;
+        Object.assign(product, normalizeExpiryFields(productData));
 
         await product.save({ transaction });
 
@@ -751,16 +808,14 @@ const updateProduct = async (req, res) => {
 
         const defaultCityPrice = refreshedProduct.prices[0];
         const index = client.index('products');
-        await index.addDocuments([{
-            id: refreshedProduct.id,
-            name: refreshedProduct.name,
-            description: refreshedProduct.description,
-            category: refreshedProduct.category?.name,
-            subcategory: refreshedProduct.subcategory?.name,
+        await index.addDocuments([getIndexedProductDocument({
+            product: refreshedProduct,
+            category: refreshedProduct.category,
+            subcategory: refreshedProduct.subcategory,
             price: defaultCityPrice?.price || 0,
             discount: defaultCityPrice?.discount || 0,
-            attributes: refreshedProduct.attributes.map((attr) => ({ name: attr.name, value: attr.value })),
-        }]);
+            attributes: refreshedProduct.attributes,
+        })]);
 
         res.json({ success: true, product: refreshedProduct });
     } catch (error) {
@@ -804,6 +859,7 @@ module.exports = {
     updateProductAvailability,
     updateProductDiscount,
     getProductsByCity,
+    getExpiringProductsByCity,
     getProductsByCategoryInCity,
     searchProducts,
     updateProductPrice,

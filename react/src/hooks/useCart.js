@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { trackEvent } from '../utils/analytics';
 
 const STORAGE_KEY = 'cart';
 const EVENT_NAME = 'cart:changed';
@@ -70,6 +71,11 @@ export const useCart = () => {
         }
 
         writeStorage(current);
+        trackEvent('add_to_cart', {
+            productId: id,
+            productName: product.name,
+            quantity: current[id]?.quantity || 1,
+        });
     }, []);
 
     const setQuantity = useCallback((id, qty) => {
@@ -86,12 +92,21 @@ export const useCart = () => {
         }
 
         writeStorage(current);
+        trackEvent('cart_quantity_changed', {
+            productId: id,
+            quantity: qty,
+        });
     }, []);
 
     const remove = useCallback((id) => {
         const current = readStorage();
+        const product = current[id];
         delete current[id];
         writeStorage(current);
+        trackEvent('remove_from_cart', {
+            productId: id,
+            productName: product?.name,
+        });
     }, []);
 
     const clear = useCallback(() => {

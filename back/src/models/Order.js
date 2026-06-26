@@ -13,7 +13,22 @@ const Order = sequelize.define('Order', {
     totalAmount: { type: DataTypes.FLOAT, defaultValue: 0 },
     promoCodeId: { type: DataTypes.INTEGER, allowNull: true },
     giftCertificateCode: { type: DataTypes.STRING, allowNull: true },
-    status: { type: DataTypes.STRING, allowNull: true } // новый статус заказа
+    status: { type: DataTypes.STRING, allowNull: true }, // новый статус заказа
+    analyticsSessionId: { type: DataTypes.STRING, allowNull: true },
+    analyticsClientId: { type: DataTypes.STRING, allowNull: true },
+    attributionSource: { type: DataTypes.STRING, allowNull: true },
+    attributionMedium: { type: DataTypes.STRING, allowNull: true },
+    attributionCampaign: { type: DataTypes.STRING, allowNull: true },
+    attributionContent: { type: DataTypes.STRING, allowNull: true },
+    attributionTerm: { type: DataTypes.STRING, allowNull: true },
+    landingPage: { type: DataTypes.TEXT, allowNull: true },
+    referrer: { type: DataTypes.TEXT, allowNull: true },
+    gclid: { type: DataTypes.STRING, allowNull: true },
+    gbraid: { type: DataTypes.STRING, allowNull: true },
+    wbraid: { type: DataTypes.STRING, allowNull: true },
+    yclid: { type: DataTypes.STRING, allowNull: true },
+    fbclid: { type: DataTypes.STRING, allowNull: true },
+    ttclid: { type: DataTypes.STRING, allowNull: true },
 });
 
 Order.belongsTo(City, { foreignKey: 'cityId', as: 'city' });

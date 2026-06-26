@@ -19,6 +19,7 @@ import { IconArrowLeft, IconPrinter, IconTrash } from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/api';
 import logo from '../images/logo-admin.svg';
+import { getOrderSource, getSourceColor, getSourceLabel } from '../utils/attribution';
 import { formatCurrency } from '../utils/formatters';
 
 const statusColor = (s) => {
@@ -113,6 +114,20 @@ const OrderDetailsPage = () => {
         ...(order.promoCode ? [{ label: 'Промокод', value: `${order.promoCode.name} (${order.promoCode.discountPercentage}% скидка)` }] : []),
         ...(order.giftCertificateCode ? [{ label: 'Сертификат', value: order.giftCertificateCode }] : []),
     ];
+    const source = getOrderSource(order);
+    const marketingRows = [
+        { label: 'Источник', value: getSourceLabel(source), badge: true },
+        { label: 'Канал', value: order.attributionMedium },
+        { label: 'Кампания', value: order.attributionCampaign },
+        { label: 'Объявление / content', value: order.attributionContent },
+        { label: 'Ключ / term', value: order.attributionTerm },
+        { label: 'Google click id', value: order.gclid || order.gbraid || order.wbraid },
+        { label: 'Yandex click id', value: order.yclid },
+        { label: 'Meta click id', value: order.fbclid },
+        { label: 'Посадочная страница', value: order.landingPage },
+        { label: 'Referrer', value: order.referrer },
+        { label: 'Session ID', value: order.analyticsSessionId },
+    ].filter((row) => row.value);
 
     return (
         <Stack gap="md">
@@ -184,6 +199,24 @@ const OrderDetailsPage = () => {
                         </Group>
                     ))}
                 </SimpleGrid>
+
+                {marketingRows.length > 0 && (
+                    <>
+                        <Title order={4} mb="sm">Источник клиента</Title>
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs" mb="lg">
+                            {marketingRows.map(({ label, value, badge }) => (
+                                <Group key={label} gap="xs" wrap="nowrap" align="flex-start">
+                                    <Text size="sm" c="dimmed" style={{ minWidth: 150 }}>{label}:</Text>
+                                    {badge ? (
+                                        <Badge color={getSourceColor(source)} variant="light">{value}</Badge>
+                                    ) : (
+                                        <Text size="sm" fw={500} style={{ wordBreak: 'break-word' }}>{value}</Text>
+                                    )}
+                                </Group>
+                            ))}
+                        </SimpleGrid>
+                    </>
+                )}
 
                 <Title order={4} mb="sm">Список товаров</Title>
                 <Table withTableBorder visibleFrom="sm">

@@ -9,6 +9,7 @@ const {
     updateProductAvailability,
     updateProductDiscount,
     getProductsByCategoryInCity,
+    getExpiringProductsByCity,
     searchProducts,
     getSearchSuggestions,
     getAllIndexedDocuments,
@@ -22,6 +23,7 @@ const {
 router.get('/', getAllProducts); // Получение всех товаров
 router.post('/more', upload.single('image'), createProducts); // Создание нескольких товаров
 router.get('/:cityId/products', getProductsByCity); // Получение товаров с ценами в городе
+router.get('/:cityId/expiring', getExpiringProductsByCity); // Товары с подходящими сроками
 router.patch('/:cityId/products/:productId/availability', updateProductAvailability); // Обновление доступности товара
 router.patch('/:cityId/products/:productId/discount', updateProductDiscount); // Обновление скидки товара
 router.get('/:cityId/category/:categoryId/products', getProductsByCategoryInCity); // Получение товаров по категории в городе
