@@ -1,0 +1,184 @@
+.page {
+  min-height: calc(100vh - 180px);
+  padding: 18px 0 28px;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.12fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.intro,
+.formPanel,
+.resultPanel,
+.closedPanel {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.intro {
+  border-radius: 28px;
+  padding: clamp(22px, 4vw, 36px);
+  position: sticky;
+  top: 86px;
+  overflow: hidden;
+}
+
+.intro::after {
+  content: '';
+  position: absolute;
+  right: -90px;
+  bottom: -90px;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: rgba(12, 227, 203, 0.18);
+}
+
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.title {
+  margin: 18px 0 0;
+  color: #0f172a;
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 0.98;
+  font-weight: 850;
+}
+
+.description {
+  margin: 16px 0 0;
+  color: #475569;
+  font-size: 17px;
+  line-height: 1.58;
+}
+
+.rules {
+  margin-top: 24px;
+  border-left: 3px solid #0ce3cb;
+  padding: 2px 0 2px 14px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.formPanel,
+.resultPanel,
+.closedPanel {
+  border-radius: 24px;
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.sectionTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.receiptBox {
+  border: 1.5px dashed #9ca3af;
+  border-radius: 18px;
+  background: #f8fafc;
+  min-height: 188px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.receiptBox:hover {
+  border-color: #0bc3af;
+  background: #f0fdfa;
+  transform: translateY(-1px);
+}
+
+.receiptPreview {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  object-fit: cover;
+}
+
+.receiptEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px;
+  text-align: center;
+  color: #475569;
+}
+
+.receiptIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 14px;
+  background: #dffcf7;
+  color: #06776c;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.resultPanel,
+.closedPanel {
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+}
+
+.ticket {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 16px;
+  padding: 12px 16px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+@media (max-width: 860px) {
+  .page {
+    padding-top: 8px;
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .intro {
+    position: static;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

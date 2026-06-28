@@ -29,6 +29,8 @@ import { GiftValidate } from './pages/Gift/GiftValedate';
 import GiftCertificatesPage from './pages/GiftCertificatesPage';
 import GiftCertificatesShop from './pages/GiftCertificatesShop';
 import PurchasedCertificatesPage from './pages/PurchasedCertificatesPage';
+import GiveawayPage from './pages/GiveawayPage';
+import GiveawayAdminPage from './pages/GiveawayAdminPage';
 import api from './api/api';
 import { PageLoader } from './components/ui';
 import SkinTypeTest from './pages/Test/Test';
@@ -121,6 +123,7 @@ function App() {
                         <Route path="/gift/:id" element={<GiftValidate />} />
                         <Route path="/product/:id" element={<Product />} />
                         <Route path="/gift-certificates" element={<GiftCertificatesShop />} />
+                        <Route path="/giveaway" element={<GiveawayPage />} />
                         <Route path="/sale" element={<ExpiringProductsPage />} />
                         <Route path="/catalog" element={<Catalog />} />
                         <Route path="/catalog/:categoryId" element={<Catalog />} />
@@ -150,6 +153,7 @@ function App() {
                         <Route path="users/create" element={<UserCreatePage />} />
                         <Route path="gift-certificates" element={<GiftCertificatesPage />} />
                         <Route path="purchased-certificates" element={<PurchasedCertificatesPage />} />
+                        <Route path="giveaway" element={<GiveawayAdminPage />} />
                         <Route path="whatsapp" element={<NotificationsPage />} />
                         <Route path="notifications" element={<NotificationsPage />} />
                     </Route>

@@ -17,6 +17,8 @@ const OrderGiftRule = require('./OrderGiftRule');
 const Banner = require('./Banner');
 const AnalyticsSession = require('./AnalyticsSession');
 const AnalyticsEvent = require('./AnalyticsEvent');
+const GiveawaySetting = require('./GiveawaySetting');
+const GiveawayParticipant = require('./GiveawayParticipant');
 
 // Ассоциации
 Category.hasMany(Subcategory, { foreignKey: 'categoryId', as: 'subcategories' });
@@ -69,4 +71,6 @@ module.exports = {
     Banner,
     AnalyticsSession,
     AnalyticsEvent,
+    GiveawaySetting,
+    GiveawayParticipant,
 };

@@ -24,6 +24,7 @@
     "express-sitemap-xml": "^3.1.0",
     "framer-motion": "^12.5.0",
     "mantine-react-table": "^2.0.0-beta.9",
+    "pdfmake": "^0.3.11",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-confetti": "^6.2.2",
@@ -36,7 +37,8 @@
     "sass": "^1.80.6",
     "sweetalert2": "^11.15.1",
     "swiper": "^11.2.2",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "dev": "vite",

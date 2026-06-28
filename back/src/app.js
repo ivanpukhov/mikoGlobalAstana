@@ -15,6 +15,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const orderGiftRuleRoutes = require('./routes/orderGiftRuleRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const giveawayRoutes = require('./routes/giveawayRoutes');
 const { seedDefaultOrderGiftRules } = require('./controllers/orderGiftRuleController');
 
 const purchasedCertificateRoutes = require('./routes/purchasedCertificateRoutes');
@@ -36,6 +37,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/order-gift-rules', orderGiftRuleRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/giveaway', giveawayRoutes);
 
 const ensureColumns = async (tableName, columns) => {
     const queryInterface = sequelize.getQueryInterface();
@@ -92,6 +94,12 @@ const ensureOrderAttributionColumns = () => ensureColumns('Orders', {
     fbclid: { type: DataTypes.STRING, allowNull: true },
     ttclid: { type: DataTypes.STRING, allowNull: true },
 });
+
+const ensureGiveawaySettingColumns = () => ensureColumns('GiveawaySettings', {
+    usePeriod: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    startsAt: { type: DataTypes.DATE, allowNull: true },
+    endsAt: { type: DataTypes.DATE, allowNull: true },
+});
 // Синхронизация базы данных и индексация
 (async () => {
     try {
@@ -99,6 +107,7 @@ const ensureOrderAttributionColumns = () => ensureColumns('Orders', {
         await ensureCategoryIconColumn();
         await ensureProductMarketingColumns();
         await ensureOrderAttributionColumns();
+        await ensureGiveawaySettingColumns();
         await seedDefaultOrderGiftRules();
         console.log('База данных синхронизирована.');
         await indexProducts();

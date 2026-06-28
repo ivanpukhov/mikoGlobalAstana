@@ -18,6 +18,7 @@ import {
     IconLogout,
     IconMapPin,
     IconPhoto,
+    IconRosetteDiscountCheck,
     IconShoppingCart,
     IconTag,
     IconTicket,
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
     { to: '/admin/promocodes',              icon: IconTag,           label: 'Промокоды' },
     { to: '/admin/gift-certificates',       icon: IconGift,          label: 'Подарочные серт.' },
     { to: '/admin/purchased-certificates',  icon: IconTicket,        label: 'Купленные серт.' },
+    { to: '/admin/giveaway',                icon: IconRosetteDiscountCheck, label: 'Розыгрыш' },
     { to: '/admin/whatsapp',                icon: IconBrandWhatsapp, label: 'WhatsApp' },
 ];
 
