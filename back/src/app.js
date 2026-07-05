@@ -99,6 +99,8 @@ const ensureGiveawaySettingColumns = () => ensureColumns('GiveawaySettings', {
     usePeriod: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     startsAt: { type: DataTypes.DATE, allowNull: true },
     endsAt: { type: DataTypes.DATE, allowNull: true },
+    bannerImage: { type: DataTypes.STRING, allowNull: true },
+    bannerLink: { type: DataTypes.STRING, allowNull: true },
 });
 // Синхронизация базы данных и индексация
 (async () => {

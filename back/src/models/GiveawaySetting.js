@@ -44,6 +44,14 @@ const GiveawaySetting = sequelize.define('GiveawaySetting', {
         type: DataTypes.DATE,
         allowNull: true,
     },
+    bannerImage: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    bannerLink: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     fields: {
         type: DataTypes.JSON,
         allowNull: false,

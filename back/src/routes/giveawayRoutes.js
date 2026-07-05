@@ -17,7 +17,7 @@ router.get('/form', getPublicGiveawayForm);
 router.post('/participants', upload.single('receipt'), createGiveawayParticipant);
 
 router.get('/settings', authenticate, getGiveawaySettings);
-router.put('/settings', authenticate, updateGiveawaySettings);
+router.put('/settings', authenticate, upload.single('bannerImage'), updateGiveawaySettings);
 router.get('/participants', authenticate, getGiveawayParticipants);
 router.patch('/participants/:id', authenticate, updateGiveawayParticipant);
 router.delete('/participants/:id', authenticate, deleteGiveawayParticipant);

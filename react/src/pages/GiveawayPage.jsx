@@ -28,6 +28,7 @@ import api, { getApiErrorMessage } from '../api/api';
 import {
     formatGiveawayDateTime,
     getInitialFieldValue,
+    resolveGiveawayReceipt,
 } from '../utils/giveaway';
 import styles from './GiveawayPage.module.css';
 
@@ -43,6 +44,8 @@ const getFieldInputMode = (field) => {
     if (field.type === 'email') return 'email';
     return 'text';
 };
+
+const isExternalLink = (value = '') => value.startsWith('http://') || value.startsWith('https://');
 
 const GiveawayPage = () => {
     const [settings, setSettings] = useState(null);
@@ -85,6 +88,9 @@ const GiveawayPage = () => {
         () => [...(settings?.fields || [])].sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0)),
         [settings?.fields]
     );
+
+    const bannerImage = resolveGiveawayReceipt(settings?.bannerImage);
+    const bannerLink = settings?.bannerLink || '';
 
     const updateField = (fieldId, value) => {
         setFormData((prev) => ({ ...prev, [fieldId]: value }));
@@ -289,31 +295,50 @@ const GiveawayPage = () => {
     return (
         <Box className={styles.page}>
             <div className={styles.shell}>
-                <aside className={styles.intro}>
-                    <div className={styles.badge}>
-                        <IconReceipt size={16} />
-                        Розыгрыш MIKO
+                <aside className={styles.sideColumn}>
+                    {!!bannerImage && (
+                        bannerLink ? (
+                            <a
+                                className={styles.banner}
+                                href={bannerLink}
+                                target={isExternalLink(bannerLink) ? '_blank' : undefined}
+                                rel={isExternalLink(bannerLink) ? 'noreferrer' : undefined}
+                            >
+                                <img src={bannerImage} alt="Баннер розыгрыша" />
+                            </a>
+                        ) : (
+                            <div className={styles.banner}>
+                                <img src={bannerImage} alt="Баннер розыгрыша" />
+                            </div>
+                        )
+                    )}
+
+                    <div className={styles.intro}>
+                        <div className={styles.badge}>
+                            <IconReceipt size={16} />
+                            Розыгрыш MIKO
+                        </div>
+                        <h1 className={styles.title}>{settings?.title || 'Розыгрыш подарков MIKO'}</h1>
+                        {!!settings?.description && (
+                            <p className={styles.description}>{settings.description}</p>
+                        )}
+
+                        {settings?.usePeriod && (
+                            <Stack gap={6} mt="xl">
+                                <Group gap={8}>
+                                    <IconCalendarEvent size={18} color="#06776c" />
+                                    <Text size="sm" fw={700}>Период приёма чеков</Text>
+                                </Group>
+                                <Text size="sm" c="dimmed">
+                                    {formatGiveawayDateTime(settings.startsAt)} — {formatGiveawayDateTime(settings.endsAt)}
+                                </Text>
+                            </Stack>
+                        )}
+
+                        {!!settings?.rulesText && (
+                            <div className={styles.rules}>{settings.rulesText}</div>
+                        )}
                     </div>
-                    <h1 className={styles.title}>{settings?.title || 'Розыгрыш подарков MIKO'}</h1>
-                    {!!settings?.description && (
-                        <p className={styles.description}>{settings.description}</p>
-                    )}
-
-                    {settings?.usePeriod && (
-                        <Stack gap={6} mt="xl">
-                            <Group gap={8}>
-                                <IconCalendarEvent size={18} color="#06776c" />
-                                <Text size="sm" fw={700}>Период приёма чеков</Text>
-                            </Group>
-                            <Text size="sm" c="dimmed">
-                                {formatGiveawayDateTime(settings.startsAt)} — {formatGiveawayDateTime(settings.endsAt)}
-                            </Text>
-                        </Stack>
-                    )}
-
-                    {!!settings?.rulesText && (
-                        <div className={styles.rules}>{settings.rulesText}</div>
-                    )}
                 </aside>
 
                 {result ? (

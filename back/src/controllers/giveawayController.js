@@ -98,6 +98,10 @@ const normalizeDateValue = (value) => {
     return date;
 };
 
+const isValidBannerLink = (value) => (
+    !value || value.startsWith('/') || value.startsWith('http://') || value.startsWith('https://')
+);
+
 const createFieldId = (label, index) => {
     const slug = normalizeText(label)
         .toLowerCase()
@@ -186,6 +190,8 @@ const getOrCreateSettings = async () => {
             usePeriod: false,
             startsAt: null,
             endsAt: null,
+            bannerImage: null,
+            bannerLink: null,
             fields: DEFAULT_FIELDS,
         },
     });
@@ -244,6 +250,8 @@ const serializeSettings = (settings) => ({
     usePeriod: settings.usePeriod,
     startsAt: settings.startsAt,
     endsAt: settings.endsAt,
+    bannerImage: settings.bannerImage,
+    bannerLink: settings.bannerLink,
     ...getAcceptanceState(settings),
     fields: Array.isArray(settings.fields) ? settings.fields : DEFAULT_FIELDS,
     createdAt: settings.createdAt,
@@ -370,6 +378,13 @@ const updateGiveawaySettings = async (req, res) => {
         const usePeriod = req.body.usePeriod === true || req.body.usePeriod === 'true';
         const startsAt = normalizeDateValue(req.body.startsAt);
         const endsAt = normalizeDateValue(req.body.endsAt);
+        const bannerLink = normalizeText(req.body.bannerLink);
+        const removeBanner = req.body.removeBanner === true || req.body.removeBanner === 'true';
+        const bannerImage = req.file
+            ? `/uploads/${req.file.filename}`
+            : removeBanner
+                ? null
+                : settings.bannerImage;
 
         if (!title) {
             return res.status(400).json({ error: 'Укажите заголовок страницы розыгрыша.' });
@@ -387,6 +402,14 @@ const updateGiveawaySettings = async (req, res) => {
             return res.status(400).json({ error: 'Дата окончания должна быть позже даты начала.' });
         }
 
+        if (!isValidBannerLink(bannerLink)) {
+            return res.status(400).json({ error: 'Ссылка баннера должна начинаться с /, http:// или https://.' });
+        }
+
+        if (bannerImage && !bannerLink) {
+            return res.status(400).json({ error: 'Укажите ссылку для клика по баннеру.' });
+        }
+
         await settings.update({
             title,
             description: normalizeText(req.body.description) || null,
@@ -397,6 +420,8 @@ const updateGiveawaySettings = async (req, res) => {
             usePeriod,
             startsAt: usePeriod ? startsAt : null,
             endsAt: usePeriod ? endsAt : null,
+            bannerImage,
+            bannerLink: bannerImage ? bannerLink : null,
             fields,
         });
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
     ActionIcon,
+    AspectRatio,
     Badge,
     Box,
     Button,
@@ -37,10 +38,12 @@ import {
     IconEye,
     IconFileSpreadsheet,
     IconFileTypePdf,
+    IconPhoto,
     IconPlus,
     IconRefresh,
     IconTicket,
     IconTrash,
+    IconUpload,
 } from '@tabler/icons-react';
 import api, { getApiErrorMessage } from '../api/api';
 import {
@@ -68,6 +71,8 @@ const emptySettings = {
     usePeriod: false,
     startsAt: null,
     endsAt: null,
+    bannerImage: '',
+    bannerLink: '',
     fields: [],
 };
 
@@ -92,6 +97,8 @@ const GiveawayAdminPage = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [participantDraft, setParticipantDraft] = useState({ status: 'new', adminNote: '' });
+    const [bannerFile, setBannerFile] = useState(null);
+    const [bannerPreview, setBannerPreview] = useState('');
 
     const loadData = async () => {
         setLoading(true);
@@ -106,8 +113,12 @@ const GiveawayAdminPage = () => {
                 ...settingsData,
                 startsAt: toDate(settingsData.startsAt),
                 endsAt: toDate(settingsData.endsAt),
+                bannerImage: settingsData.bannerImage || '',
+                bannerLink: settingsData.bannerLink || '',
                 fields: Array.isArray(settingsData.fields) ? settingsData.fields : [],
             });
+            setBannerFile(null);
+            setBannerPreview('');
             setParticipants(Array.isArray(participantsData) ? participantsData : []);
         } catch {
             notifications.show({ color: 'red', message: 'Не удалось загрузить розыгрыш.' });
@@ -119,6 +130,12 @@ const GiveawayAdminPage = () => {
     useEffect(() => {
         loadData();
     }, []);
+
+    useEffect(() => () => {
+        if (bannerPreview) {
+            URL.revokeObjectURL(bannerPreview);
+        }
+    }, [bannerPreview]);
 
     const visibleFields = useMemo(
         () => settings.fields.filter((field) => field.showInTable !== false),
@@ -199,27 +216,76 @@ const GiveawayAdminPage = () => {
         });
     };
 
+    const handleBannerChange = (event) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            notifications.show({ color: 'red', message: 'Загрузите баннер в формате JPG или PNG.' });
+            return;
+        }
+
+        if (bannerPreview) {
+            URL.revokeObjectURL(bannerPreview);
+        }
+
+        setBannerFile(file);
+        setBannerPreview(URL.createObjectURL(file));
+    };
+
+    const removeBanner = () => {
+        if (bannerPreview) {
+            URL.revokeObjectURL(bannerPreview);
+        }
+
+        setBannerFile(null);
+        setBannerPreview('');
+        updateSettings({ bannerImage: '', bannerLink: '' });
+    };
+
     const saveSettings = async () => {
         setSavingSettings(true);
         try {
-            const payload = {
-                ...settings,
-                startsAt: settings.usePeriod && settings.startsAt ? settings.startsAt.toISOString() : null,
-                endsAt: settings.usePeriod && settings.endsAt ? settings.endsAt.toISOString() : null,
-                fields: settings.fields.map((field, index) => ({
-                    ...field,
-                    sortOrder: index + 1,
-                })),
-            };
+            const fields = settings.fields.map((field, index) => ({
+                ...field,
+                sortOrder: index + 1,
+            }));
+            const payload = new FormData();
 
-            const { data } = await api.put('/giveaway/settings', payload);
+            payload.append('title', settings.title || '');
+            payload.append('description', settings.description || '');
+            payload.append('rulesText', settings.rulesText || '');
+            payload.append('successTitle', settings.successTitle || '');
+            payload.append('successText', settings.successText || '');
+            payload.append('isActive', String(Boolean(settings.isActive)));
+            payload.append('usePeriod', String(Boolean(settings.usePeriod)));
+            payload.append('startsAt', settings.usePeriod && settings.startsAt ? settings.startsAt.toISOString() : '');
+            payload.append('endsAt', settings.usePeriod && settings.endsAt ? settings.endsAt.toISOString() : '');
+            payload.append('bannerLink', settings.bannerLink || '');
+            payload.append('removeBanner', String(!settings.bannerImage && !bannerFile));
+            payload.append('fields', JSON.stringify(fields));
+
+            if (bannerFile) {
+                payload.append('bannerImage', bannerFile);
+            }
+
+            const { data } = await api.put('/giveaway/settings', payload, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
             setSettings({
                 ...emptySettings,
                 ...data,
                 startsAt: toDate(data.startsAt),
                 endsAt: toDate(data.endsAt),
+                bannerImage: data.bannerImage || '',
+                bannerLink: data.bannerLink || '',
                 fields: Array.isArray(data.fields) ? data.fields : [],
             });
+            setBannerFile(null);
+            setBannerPreview('');
             notifications.show({ color: 'teal', message: 'Настройки розыгрыша сохранены.' });
         } catch (error) {
             notifications.show({
@@ -384,6 +450,8 @@ const GiveawayAdminPage = () => {
             setExporting(false);
         }
     };
+
+    const bannerSrc = bannerPreview || resolveGiveawayReceipt(settings.bannerImage);
 
     if (loading) {
         return (
@@ -586,6 +654,76 @@ const GiveawayAdminPage = () => {
                                         value={settings.rulesText || ''}
                                         onChange={(event) => updateSettings({ rulesText: event.target.value })}
                                     />
+
+                                    <Divider />
+
+                                    <Stack gap="sm">
+                                        <Group justify="space-between" align="flex-start">
+                                            <Stack gap={2}>
+                                                <Text fw={700}>Баннер розыгрыша</Text>
+                                                <Text size="sm" c="dimmed">
+                                                    Горизонтальное изображение 16:9, показывается слева на ПК и сверху на мобильной.
+                                                </Text>
+                                            </Stack>
+                                            {bannerSrc && (
+                                                <Button variant="subtle" color="red" size="xs" onClick={removeBanner}>
+                                                    Удалить
+                                                </Button>
+                                            )}
+                                        </Group>
+
+                                        <AspectRatio ratio={16 / 9}>
+                                            {bannerSrc ? (
+                                                <Image
+                                                    src={bannerSrc}
+                                                    alt="Баннер розыгрыша"
+                                                    radius="md"
+                                                    fit="cover"
+                                                />
+                                            ) : (
+                                                <Box
+                                                    style={{
+                                                        border: '1px dashed var(--mantine-color-gray-4)',
+                                                        borderRadius: 'var(--mantine-radius-md)',
+                                                        display: 'grid',
+                                                        placeItems: 'center',
+                                                        color: 'var(--mantine-color-gray-6)',
+                                                        background: 'var(--mantine-color-gray-0)',
+                                                    }}
+                                                >
+                                                    <Stack align="center" gap={6}>
+                                                        <IconPhoto size={28} />
+                                                        <Text size="sm">Баннер не загружен</Text>
+                                                    </Stack>
+                                                </Box>
+                                            )}
+                                        </AspectRatio>
+
+                                        <Group gap="xs" align="flex-end">
+                                            <label>
+                                                <input
+                                                    type="file"
+                                                    accept="image/png,image/jpeg,image/jpg"
+                                                    onChange={handleBannerChange}
+                                                    style={{ display: 'none' }}
+                                                />
+                                                <Button
+                                                    component="span"
+                                                    variant="default"
+                                                    leftSection={<IconUpload size={16} />}
+                                                >
+                                                    Загрузить 16:9
+                                                </Button>
+                                            </label>
+                                        </Group>
+
+                                        <TextInput
+                                            label="Ссылка при клике"
+                                            placeholder="/catalog или https://..."
+                                            value={settings.bannerLink || ''}
+                                            onChange={(event) => updateSettings({ bannerLink: event.target.value })}
+                                        />
+                                    </Stack>
 
                                     <Divider />
 
