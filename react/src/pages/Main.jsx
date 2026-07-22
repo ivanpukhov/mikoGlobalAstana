@@ -76,6 +76,17 @@ export const Main = () => {
         <Container size="xl" py={{ base: 'sm', md: 'md' }} px={0}>
             <MainTop categories={categories} loading={loadingCategories} />
 
+            <Stack gap={6} mt={{ base: 'lg', md: 'xl' }}>
+                <Title order={1} fz={{ base: 28, sm: 36, md: 44 }} fw={850} lh={1.08}>
+                    Корейская косметика и товары для дома в Астане
+                </Title>
+                <Text c="dimmed" fz={{ base: 15, sm: 17 }} maw={900} lh={1.6}>
+                    В Miko легко найти уходовую косметику, посуду, товары для дома,
+                    подарки и полезные новинки из Южной Кореи. Выбирайте товары по
+                    категориям, проверяйте актуальное наличие и оформляйте заказ онлайн.
+                </Text>
+            </Stack>
+
             <Box
                 mt="xl"
                 p={{ base: 'md', md: 'xl' }}

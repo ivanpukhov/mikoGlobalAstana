@@ -1,3 +1,9 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /cart
+Disallow: /search/
+Disallow: /gift/
+
+Sitemap: https://miko-astana.kz/sitemap.xml
+Host: miko-astana.kz

@@ -1,7 +1,7 @@
 {
   "short_name": "Miko",
-  "name": "Miko - товары из Южной Кореи",
-  "description": "Miko — это магазин, предлагающий качественные товары из Южной Кореи. Найдите косметику, бытовые товары и многое другое.",
+  "name": "Miko Astana — корейские товары и подарки",
+  "description": "Корейская косметика, товары для дома, рецепты и подарки с доставкой по Астане.",
   "icons": [
     {
       "src": "favicon_16x16.png",
@@ -37,7 +37,7 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#000000",
+  "theme_color": "#087f72",
   "background_color": "#ffffff",
   "scope": "/",
   "lang": "ru",

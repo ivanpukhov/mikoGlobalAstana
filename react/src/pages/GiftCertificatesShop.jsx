@@ -73,7 +73,11 @@ const GiftCertificatesShop = () => {
 
     return (
         <Box mt="xl" pb="xl">
-            <Title order={2} fw={700} mb="xl">Подарочные сертификаты</Title>
+            <Title order={1} fz={{ base: 28, sm: 36 }} fw={700} mb="xs">Подарочные сертификаты Miko</Title>
+            <Text c="dimmed" mb="xl" maw={760}>
+                Подарите свободу выбора: электронный сертификат можно оформить онлайн,
+                выбрать подходящий номинал и отправить близкому человеку.
+            </Text>
 
             <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, md: 4 }} spacing="md">
                 {certificates.map((cert) => (

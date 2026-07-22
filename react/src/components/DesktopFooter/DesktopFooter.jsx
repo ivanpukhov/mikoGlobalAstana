@@ -22,9 +22,9 @@ import classes from './DesktopFooter.module.css';
 
 const SHOP_LINKS = [
     { to: '/categories', label: 'Каталог' },
+    { to: '/recipes', label: 'Рецепты' },
     { to: '/gift-certificates', label: 'Подарочные сертификаты' },
-    { to: '/cart', label: 'Корзина' },
-    { to: '/search/miko', label: 'Поиск товаров' },
+    { to: '/sale', label: 'Товары со скидками' },
 ];
 
 const HELP_LINKS = [
@@ -46,8 +46,8 @@ export const DesktopFooter = ({ selectedCity }) => {
                             <img src={logo} alt="Miko" className={classes.logo} />
                         </Link>
                         <Text className={classes.lead}>
-                            Онлайн-витрина с акцентом на быстрый поиск, понятную навигацию и
-                            покупки с учётом выбранного города.
+                            Корейская косметика, товары для дома, посуда и подарки с удобным
+                            заказом онлайн и актуальным наличием в Астане.
                         </Text>
                         <Group gap="sm" align="flex-start" wrap="nowrap">
                             <ThemeIcon size={42} radius="xl" variant="light" color="white">
@@ -110,13 +110,13 @@ export const DesktopFooter = ({ selectedCity }) => {
 
                         <Button
                             component={Link}
-                            to="/search/miko"
+                            to="/categories"
                             color="white"
                             c="miko.8"
                             radius="xl"
                             leftSection={<IconSearch size={16} />}
                         >
-                            Найти товар
+                            Перейти в каталог
                         </Button>
                     </Stack>
                 </SimpleGrid>

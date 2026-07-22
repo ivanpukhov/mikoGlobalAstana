@@ -91,7 +91,7 @@ const ExpiringProductsPage = () => {
                         <Badge color="orange" variant="filled" leftSection={<IconDiscount2 size={14} />}>
                             Уценка
                         </Badge>
-                        <Title order={2} fw={800}>Товары с подходящими сроками</Title>
+                        <Title order={1} fz={{ base: 28, sm: 36 }} fw={800}>Товары со скидками</Title>
                         <Text c="dimmed" maw={680}>
                             Здесь собраны товары, которые администратор перевел в уценку по срокам.
                         </Text>

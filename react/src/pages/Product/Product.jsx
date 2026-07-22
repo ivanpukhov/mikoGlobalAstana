@@ -34,6 +34,7 @@ import { trackEvent } from '../../utils/analytics';
 import { formatCurrency } from '../../utils/formatters';
 import placeholder from '../../images/products/i.jpg';
 import styles from './Product.module.scss';
+import { shortenSeoText, useSeo } from '../../components/Seo/Seo';
 
 export const Product = () => {
     const [product, setProduct] = useState(null);
@@ -56,6 +57,33 @@ export const Product = () => {
     const priceWithoutDiscount = cityPrice?.price || 0;
     const discount = cityPrice?.discount || 0;
     const discountedPrice = priceWithoutDiscount - (priceWithoutDiscount * discount) / 100;
+    const productDescription = product
+        ? (shortenSeoText(product.description) || `Купить ${product.name} в магазине Miko в Астане. Актуальные цены, наличие и удобный заказ онлайн.`)
+        : 'Товар из каталога Miko Astana.';
+
+    useSeo({
+        title: product ? `${shortenSeoText(product.name, 46)} | Miko Astana` : 'Товар | Miko Astana',
+        description: productDescription,
+        canonical: `/product/${id}`,
+        image: product?.image ? `/api${product.image}` : '/og-miko.jpg',
+        type: 'product',
+        schemas: product ? [{
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            description: productDescription,
+            image: [product.image ? `https://miko-astana.kz/api${product.image}` : 'https://miko-astana.kz/og-miko.jpg'],
+            sku: String(product.id),
+            category: product.category?.name,
+            offers: cityPrice ? {
+                '@type': 'Offer',
+                priceCurrency: 'KZT',
+                price: discountedPrice,
+                availability: cityPrice.availability === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+                url: `https://miko-astana.kz/product/${id}`,
+            } : undefined,
+        }] : [],
+    });
 
     useEffect(() => {
         const cart = JSON.parse(localStorage.getItem('cart')) || {};
@@ -113,7 +141,7 @@ export const Product = () => {
                 <ActionIcon variant="light" radius="lg" size="lg" onClick={() => navigate(-1)}>
                     <IconArrowLeft size={18} />
                 </ActionIcon>
-                <Title order={2} fw={700} style={{ lineHeight: 1.3 }}>
+                <Title order={1} fz={{ base: 28, sm: 36 }} fw={700} style={{ lineHeight: 1.3 }}>
                     {product.name}
                 </Title>
             </Group>

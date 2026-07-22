@@ -45,6 +45,7 @@ import { DesktopFooter } from './components/DesktopFooter/DesktopFooter';
 import { MobileBottomBar } from './components/MobileBottomBar/MobileBottomBar';
 import { CityModal } from './components/CityModal/CityModal';
 import { useAnalyticsPageTracking } from './hooks/useAnalyticsPageTracking';
+import { SeoManager } from './components/Seo/Seo';
 
 function App() {
     const [selectedCity, setSelectedCity] = useState(null);
@@ -110,6 +111,7 @@ function App() {
 
     return (
         <div className="App">
+            <SeoManager />
             {!isAdminRoute && (
                 <AppHeader
                     selectedCity={selectedCity}

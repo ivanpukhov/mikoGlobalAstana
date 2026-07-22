@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Box, Loader, SimpleGrid, Stack } from '@mantine/core';
+import { Box, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { IconCategory } from '@tabler/icons-react';
 import api from '../../api/api';
 import { EmptyState } from '../../components/ui';
 import { CategoryTile } from '../../components/CategoryTile/CategoryTile';
-import { SectionHeader } from '../../components/SectionHeader/SectionHeader';
 
 export const Categories = () => {
     const [categories, setCategories] = useState([]);
@@ -27,7 +26,11 @@ export const Categories = () => {
 
     return (
         <Box mt="xl" pb="xl">
-            <SectionHeader title="Категории" />
+            <Title order={1} fz={{ base: 28, sm: 36 }} fw={800}>Каталог Miko</Title>
+            <Text c="dimmed" mt={6} mb="xl" maw={780}>
+                Корейская косметика, товары для дома, посуда, подарки и полезные находки —
+                выберите интересующий раздел каталога.
+            </Text>
 
             {categories.length === 0 ? (
                 <EmptyState

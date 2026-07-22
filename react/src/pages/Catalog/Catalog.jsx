@@ -21,6 +21,7 @@ import { useParams } from 'react-router-dom';
 import api from '../../api/api';
 import { CatalogProduct } from '../../components/Products/CatalogProduct';
 import { EmptyState, ProductGridSkeleton } from '../../components/ui';
+import { useSeo } from '../../components/Seo/Seo';
 
 const SORT_OPTIONS = [
     { value: 'default', label: 'По умолчанию' },
@@ -58,6 +59,21 @@ export const Catalog = () => {
     const [sort, setSort] = useState('default');
 
     const [city] = useState(() => JSON.parse(localStorage.getItem('selectedCity')));
+
+    useSeo({
+        title: categoryName ? `${categoryName} — купить в Астане | Miko` : 'Каталог товаров | Miko Astana',
+        description: categoryName
+            ? `Купить товары категории «${categoryName}» в магазине Miko в Астане. Актуальный ассортимент, цены, наличие и удобный заказ онлайн.`
+            : 'Каталог корейских товаров Miko с актуальными ценами и наличием в Астане.',
+        canonical: categoryId ? `/catalog/${categoryId}` : '/categories',
+        noIndex: !categoryId,
+        schemas: categoryName ? [{
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: categoryName,
+            url: `https://miko-astana.kz/catalog/${categoryId}`,
+        }] : [],
+    });
 
     useEffect(() => {
         if (!city) { setLoading(false); return; }
@@ -203,7 +219,7 @@ export const Catalog = () => {
 
     return (
         <Box mt="xl">
-            <Title order={2} fw={700} mb="md">{categoryName || 'Каталог'}</Title>
+            <Title order={1} fz={{ base: 28, sm: 36 }} fw={700} mb="md">{categoryName || 'Каталог'}</Title>
 
             {/* Toolbar */}
             <Group justify="space-between" mb="md" wrap="wrap" gap="sm">

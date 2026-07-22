@@ -5,6 +5,7 @@ import { IconChefHat, IconClock, IconFlame, IconToolsKitchen2, IconUsers } from 
 import api from '../api/api';
 import { resolveImage } from '../utils/resolveImage';
 import classes from './RecipeDetails.module.css';
+import { shortenSeoText, useSeo } from '../components/Seo/Seo';
 
 const difficulties = { easy: 'Легко', medium: 'Средняя сложность', hard: 'Для опытных' };
 
@@ -18,9 +19,27 @@ export default function RecipeDetailsPage() {
         api.get(`/recipes/${encodeURIComponent(slug)}`).then(({ data }) => setRecipe(data)).catch(() => setError(true));
     }, [slug]);
 
-    useEffect(() => {
-        if (recipe?.seoTitle || recipe?.title) document.title = recipe.seoTitle || `${recipe.title} — Miko`;
-    }, [recipe]);
+    const seoDescription = recipe
+        ? shortenSeoText(recipe.seoDescription || recipe.excerpt || `Пошаговый рецепт «${recipe.title}» с точными ингредиентами и понятным приготовлением.`)
+        : 'Пошаговый рецепт от Miko Astana.';
+    useSeo({
+        title: recipe ? shortenSeoText(recipe.seoTitle || `${recipe.title} — пошаговый рецепт | Miko`, 68) : 'Рецепт | Miko Astana',
+        description: seoDescription,
+        canonical: `/recipes/${slug}`,
+        image: recipe?.image ? `/api${recipe.image}` : '/og-miko.jpg',
+        type: 'article',
+        schemas: recipe ? [{
+            '@context': 'https://schema.org',
+            '@type': 'Recipe',
+            name: recipe.title,
+            description: seoDescription,
+            image: [recipe.image ? `https://miko-astana.kz/api${recipe.image}` : 'https://miko-astana.kz/og-miko.jpg'],
+            recipeCategory: recipe.category,
+            recipeYield: recipe.servings ? `${recipe.servings} порций` : undefined,
+            recipeIngredient: recipe.ingredients?.map((item) => `${item.amount || ''} ${item.name}`.trim()),
+            recipeInstructions: recipe.steps?.map((step, index) => ({ '@type': 'HowToStep', position: index + 1, name: step.title || `Шаг ${index + 1}`, text: step.text })),
+        }] : [],
+    });
 
     if (error) return <Stack align="center" py={80}><Title order={2}>Рецепт не найден</Title><Text component={Link} to="/recipes" c="miko.8" fw={700}>Вернуться к рецептам</Text></Stack>;
     if (!recipe) return <Text ta="center" py={80}>Загружаем рецепт…</Text>;
