@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import ReactQuill from 'react-quill';
-import { ActionIcon, Badge, Box, Button, Card, Divider, FileButton, Grid, Group, Image, NumberInput, Paper, Select, Stack, Switch, Tabs, TagsInput, Text, TextInput, Textarea, Title } from '@mantine/core';
+import { ActionIcon, Badge, Box, Button, Card, Divider, FileButton, Grid, Group, Image, Loader, NumberInput, Paper, Select, Stack, Switch, Tabs, TagsInput, Text, TextInput, Textarea, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconArrowLeft, IconGripVertical, IconPhoto, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
 import api, { getApiErrorMessage } from '../api/api';
 import { resolveImage } from '../utils/resolveImage';
 import classes from './RecipeEditor.module.css';
+
+// react-quill is CommonJS. Loading it the same way as ProductForm prevents
+// Vite from mixing static and dynamic interop wrappers in the production bundle.
+const ReactQuill = lazy(() => import('react-quill'));
 
 const empty = { title: '', slug: '', excerpt: '', content: '', category: '', tags: [], ingredients: [{ name: '', amount: '', group: '' }], steps: [{ title: '', text: '' }], servings: 4, prepTime: 15, cookTime: 30, difficulty: 'easy', calories: '', isPublished: false, isFeatured: false, seoTitle: '', seoDescription: '' };
 const slugify = (value) => value.toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-+|-+$/g, '');
@@ -57,7 +60,7 @@ export default function RecipeEditorPage() {
             <Card withBorder p="lg"><Stack>
                 <TextInput label="Название" placeholder="Например, Том-ям с креветками" required value={form.title} onChange={(e) => { set('title', e.target.value); if (!slugTouched) set('slug', slugify(e.target.value)); }} />
                 <Textarea label="Короткое описание" description="Показывается на карточке и под заголовком" minRows={3} maxLength={300} value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} />
-                <Box><Text fw={600} mb={6}>Вступление и советы</Text><Text size="sm" c="dimmed" mb="xs">Форматированный текст перед шагами приготовления</Text><ReactQuill theme="snow" value={form.content} onChange={(value) => set('content', value)} modules={quillModules} className={classes.quill} /></Box>
+                <Box><Text fw={600} mb={6}>Вступление и советы</Text><Text size="sm" c="dimmed" mb="xs">Форматированный текст перед шагами приготовления</Text><Suspense fallback={<Box className={classes.editorLoader}><Loader color="miko" size="sm" /><Text size="sm" c="dimmed">Загрузка редактора…</Text></Box>}><ReactQuill theme="snow" value={form.content} onChange={(value) => set('content', value)} modules={quillModules} className={classes.quill} /></Suspense></Box>
             </Stack></Card>
 
             <Card withBorder p="lg"><Group justify="space-between" mb="md"><div><Title order={3}>Ингредиенты</Title><Text c="dimmed" size="sm">Количество, единица измерения и необязательная группа</Text></div><Button variant="light" color="miko" leftSection={<IconPlus size={16}/>} onClick={() => addList('ingredients', { name: '', amount: '', group: '' })}>Добавить</Button></Group>

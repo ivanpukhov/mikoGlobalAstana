@@ -13,6 +13,7 @@ import api from '../api/api';
 import { MainTop } from '../components/MainTop/MainTop';
 import { SectionHeader } from '../components/SectionHeader/SectionHeader';
 import { ProductGrid } from '../components/ProductGrid/ProductGrid';
+import { RecipesPromo } from '../components/RecipesPromo/RecipesPromo';
 
 export const Main = () => {
     const [categories, setCategories] = useState([]);
@@ -106,6 +107,8 @@ export const Main = () => {
                     </Button>
                 </Group>
             </Box>
+
+            <RecipesPromo />
 
             {loadingProducts ? (
                 <Box mt="xl">
