@@ -23,6 +23,7 @@ import {
     IconTag,
     IconTicket,
     IconUsers,
+    IconChefHat,
 } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../images/logo-admin.svg';
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
     { to: '/admin/products',                icon: IconBuildingStore, label: 'Товары' },
     { to: '/admin/categories',              icon: IconCategory,      label: 'Категории' },
     { to: '/admin/banners',                 icon: IconPhoto,         label: 'Баннеры' },
+    { to: '/admin/recipes',                 icon: IconChefHat,       label: 'Рецепты' },
     { to: '/admin/order-gifts',             icon: IconGift,          label: 'Подарки к заказу' },
     { to: '/admin/cities',                  icon: IconMapPin,        label: 'Города' },
     { to: '/admin/orders',                  icon: IconShoppingCart,  label: 'Заказы' },

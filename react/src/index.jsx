@@ -7,6 +7,7 @@ import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/dropzone/styles.css';
 import '@mantine/charts/styles.css';
+import 'react-quill/dist/quill.snow.css';
 
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';

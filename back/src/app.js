@@ -16,6 +16,7 @@ const orderGiftRuleRoutes = require('./routes/orderGiftRuleRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const giveawayRoutes = require('./routes/giveawayRoutes');
+const recipeRoutes = require('./routes/recipeRoutes');
 const { seedDefaultOrderGiftRules } = require('./controllers/orderGiftRuleController');
 
 const purchasedCertificateRoutes = require('./routes/purchasedCertificateRoutes');
@@ -38,6 +39,7 @@ app.use('/api/order-gift-rules', orderGiftRuleRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/giveaway', giveawayRoutes);
+app.use('/api/recipes', recipeRoutes);
 
 const ensureColumns = async (tableName, columns) => {
     const queryInterface = sequelize.getQueryInterface();

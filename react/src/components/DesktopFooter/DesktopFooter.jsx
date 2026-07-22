@@ -28,6 +28,7 @@ const SHOP_LINKS = [
 ];
 
 const HELP_LINKS = [
+    { to: '/recipes', label: 'Рецепты и идеи' },
     { to: '/gift-certificates', label: 'Как выбрать сертификат' },
     { to: '/test', label: 'Тест по уходу' },
     { to: '/categories', label: 'Популярные категории' },

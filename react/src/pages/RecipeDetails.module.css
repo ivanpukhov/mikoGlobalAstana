@@ -1,0 +1,18 @@
+.page { padding: 16px 0 64px; color: #102521; }
+.page a { color: #087f72; }
+.intro { background: linear-gradient(145deg, #f7fffd, #fff); padding: clamp(12px, 3vw, 34px); border-radius: 32px; }
+.cover { height: clamp(330px, 43vw, 580px); overflow: hidden; border-radius: 26px; box-shadow: 0 20px 50px rgba(9,73,65,.16); }
+.cover img { height: 100%; width: 100%; object-fit: cover; }
+.intro h1 { font-size: clamp(38px, 5vw, 64px); line-height: 1.02; letter-spacing: -2px; }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.stat { display: flex; gap: 10px; align-items: center; }
+.ingredients { background: #effcf8; border: 1px solid #d2f5eb; position: sticky; top: 84px; }
+.ingredient { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px dashed #bcded5; cursor: pointer; }
+.group { margin: 22px 0 2px; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; font-size: 12px; color: #087f72; }
+.step { display: grid; grid-template-columns: 54px 1fr; gap: 18px; }
+.stepNumber { width: 50px; height: 50px; border-radius: 18px; background: #0bc3af; color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 800; box-shadow: 0 8px 20px rgba(11,195,175,.25); }
+.stepText { line-height: 1.7; white-space: pre-wrap; }
+.richText { font-size: 18px; line-height: 1.75; color: #40534f; }
+.richText h2 { color: #102521; font-size: 30px; }
+.richText blockquote { margin: 24px 0; padding: 18px 22px; border-left: 4px solid #0bc3af; background: #f4fffc; border-radius: 0 14px 14px 0; }
+@media (max-width: 48em) { .page { padding-top: 4px; } .intro { border-radius: 22px; padding: 10px; } .intro h1 { letter-spacing: -1px; } .cover { border-radius: 18px; } .ingredients { position: static; } .stats { grid-template-columns: 1fr 1fr; } }

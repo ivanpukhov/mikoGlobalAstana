@@ -35,6 +35,10 @@ import api from './api/api';
 import { PageLoader } from './components/ui';
 import SkinTypeTest from './pages/Test/Test';
 import NotificationsPage from './pages/NotificationsPage';
+import RecipesPage from './pages/RecipesPage';
+import RecipeDetailsPage from './pages/RecipeDetailsPage';
+import AdminRecipesPage from './pages/AdminRecipesPage';
+import RecipeEditorPage from './pages/RecipeEditorPage';
 import FloatingFeedback from './components/FloatingFeedback';
 import { AppHeader } from './components/AppHeader/AppHeader';
 import { DesktopFooter } from './components/DesktopFooter/DesktopFooter';
@@ -129,6 +133,8 @@ function App() {
                         <Route path="/catalog/:categoryId" element={<Catalog />} />
                         <Route path="/cart" element={<Cart />} />
                         <Route path="/test" element={<SkinTypeTest />} />
+                        <Route path="/recipes" element={<RecipesPage />} />
+                        <Route path="/recipes/:slug" element={<RecipeDetailsPage />} />
                         <Route path="/search/:query" element={<Search />} />
                         <Route path="/*" element={<NotFound />} />
                     </Routes>
@@ -156,6 +162,9 @@ function App() {
                         <Route path="giveaway" element={<GiveawayAdminPage />} />
                         <Route path="whatsapp" element={<NotificationsPage />} />
                         <Route path="notifications" element={<NotificationsPage />} />
+                        <Route path="recipes" element={<AdminRecipesPage />} />
+                        <Route path="recipes/create" element={<RecipeEditorPage />} />
+                        <Route path="recipes/edit/:id" element={<RecipeEditorPage />} />
                     </Route>
                     <Route path="/admin/login" element={<LoginPage />} />
                 </Routes>

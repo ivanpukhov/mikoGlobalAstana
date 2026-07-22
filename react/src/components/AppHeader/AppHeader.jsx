@@ -18,6 +18,7 @@ import {
     IconMapPin,
     IconSearch,
     IconShoppingCart,
+    IconChefHat,
 } from '@tabler/icons-react';
 import logo from '../../images/logo.svg';
 import api from '../../api/api';
@@ -88,6 +89,11 @@ export const AppHeader = ({ selectedCity, onOpenCityModal }) => {
                     <Text fw={600} fz="sm" c="white">
                         Уценка
                     </Text>
+                </UnstyledButton>
+
+                <UnstyledButton component={Link} to="/recipes" className={classes.saleBtn}>
+                    <IconChefHat size={20} stroke={2} />
+                    <Text fw={600} fz="sm" c="white">Рецепты</Text>
                 </UnstyledButton>
 
                 <Autocomplete

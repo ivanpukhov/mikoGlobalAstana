@@ -16,8 +16,8 @@ const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
-        if (ext !== '.png' && ext !== '.jpg' && ext !== '.jpeg') {
-            return cb(new Error('Разрешены только изображения в формате PNG, JPG или JPEG.'));
+        if (!['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
+            return cb(new Error('Разрешены изображения PNG, JPG, JPEG или WEBP.'));
         }
         cb(null, true);
     },

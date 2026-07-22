@@ -19,6 +19,7 @@ const AnalyticsSession = require('./AnalyticsSession');
 const AnalyticsEvent = require('./AnalyticsEvent');
 const GiveawaySetting = require('./GiveawaySetting');
 const GiveawayParticipant = require('./GiveawayParticipant');
+const Recipe = require('./Recipe');
 
 // Ассоциации
 Category.hasMany(Subcategory, { foreignKey: 'categoryId', as: 'subcategories' });
@@ -73,4 +74,5 @@ module.exports = {
     AnalyticsEvent,
     GiveawaySetting,
     GiveawayParticipant,
+    Recipe,
 };
